@@ -1,0 +1,50 @@
+{
+  "name": "@devmemory/core",
+  "version": "0.1.0",
+  "description": "DevMemory core engines: project resolution, git, context, memory, tasks, sessions and recovery.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "coding-agent",
+    "claude",
+    "devmemory",
+    "context-engine",
+    "project-memory"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/GITHUB_USER/devmemory#readme",
+  "bugs": {
+    "url": "https://github.com/GITHUB_USER/devmemory/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GITHUB_USER/devmemory.git",
+    "directory": "packages/core"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@devmemory/shared": "workspace:*",
+    "@devmemory/storage": "workspace:*",
+    "@devmemory/indexer": "workspace:*"
+  }
+}

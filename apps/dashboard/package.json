@@ -1,0 +1,51 @@
+{
+  "name": "@devmemory/dashboard",
+  "version": "0.1.0",
+  "description": "Local web dashboard for DevMemory: projects, tasks, memory, changes, sessions and analytics.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "coding-agent",
+    "claude",
+    "devmemory",
+    "dashboard"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/GITHUB_USER/devmemory#readme",
+  "bugs": {
+    "url": "https://github.com/GITHUB_USER/devmemory/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GITHUB_USER/devmemory.git",
+    "directory": "apps/dashboard"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "devmemory-dashboard": "./dist/main.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@devmemory/shared": "workspace:*",
+    "@devmemory/core": "workspace:*"
+  }
+}

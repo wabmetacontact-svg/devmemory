@@ -1,0 +1,7 @@
+node_modules/
+dist/
+*.tsbuildinfo
+coverage/
+.devmemory-test/
+*.log
+.DS_Store

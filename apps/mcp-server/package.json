@@ -1,0 +1,47 @@
+{
+  "name": "@devmemory/mcp-server",
+  "version": "0.1.0",
+  "description": "DevMemory MCP server (stdio) for Claude Code, OpenCode and any MCP-compatible agent.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "coding-agent",
+    "claude",
+    "devmemory",
+    "mcp-server",
+    "stdio"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/GITHUB_USER/devmemory#readme",
+  "bugs": {
+    "url": "https://github.com/GITHUB_USER/devmemory/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GITHUB_USER/devmemory.git",
+    "directory": "apps/mcp-server"
+  },
+  "type": "module",
+  "main": "./dist/main.js",
+  "bin": {
+    "devmemory-mcp": "./dist/main.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@devmemory/shared": "workspace:*",
+    "@devmemory/core": "workspace:*",
+    "@devmemory/mcp": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "files": [],
+  "references": [
+    {
+      "path": "packages/shared"
+    },
+    {
+      "path": "packages/storage"
+    },
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/indexer"
+    },
+    {
+      "path": "packages/mcp"
+    },
+    {
+      "path": "apps/mcp-server"
+    },
+    {
+      "path": "apps/cli"
+    },
+    {
+      "path": "apps/dashboard"
+    }
+  ]
+}

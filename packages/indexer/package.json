@@ -1,0 +1,52 @@
+{
+  "name": "@devmemory/indexer",
+  "version": "0.1.0",
+  "description": "Incremental filesystem indexer, tree-sitter code intelligence and FTS5 search for DevMemory.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "coding-agent",
+    "claude",
+    "devmemory",
+    "tree-sitter",
+    "code-intelligence",
+    "indexer"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/GITHUB_USER/devmemory#readme",
+  "bugs": {
+    "url": "https://github.com/GITHUB_USER/devmemory/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GITHUB_USER/devmemory.git",
+    "directory": "packages/indexer"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@devmemory/shared": "workspace:*",
+    "@devmemory/storage": "workspace:*",
+    "web-tree-sitter": "^0.27.0",
+    "@vscode/tree-sitter-wasm": "^0.3.1"
+  }
+}

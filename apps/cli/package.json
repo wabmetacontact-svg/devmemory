@@ -1,0 +1,48 @@
+{
+  "name": "devmemory",
+  "version": "0.1.0",
+  "description": "Persistent development intelligence for AI coding agents. One global install, any project, any MCP agent.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "coding-agent",
+    "claude",
+    "devmemory",
+    "cli",
+    "mcp-server",
+    "context",
+    "memory"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/GITHUB_USER/devmemory#readme",
+  "bugs": {
+    "url": "https://github.com/GITHUB_USER/devmemory/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GITHUB_USER/devmemory.git",
+    "directory": "apps/cli"
+  },
+  "type": "module",
+  "main": "./dist/bin.js",
+  "bin": {
+    "devmemory": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "dependencies": {
+    "@devmemory/shared": "workspace:*",
+    "@devmemory/core": "workspace:*",
+    "@devmemory/storage": "workspace:*",
+    "@devmemory/mcp": "workspace:*",
+    "commander": "^15.0.0",
+    "@devmemory/dashboard": "workspace:*"
+  }
+}
