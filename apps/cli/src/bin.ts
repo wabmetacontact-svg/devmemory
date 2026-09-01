@@ -43,6 +43,11 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
+/** Wraps an argument in quotes only when it contains something a shell would split. */
+function quoteIfNeeded(value: string): string {
+  return /[\s"]/.test(value) ? `"${value}"` : value;
+}
+
 function splitList(value: string): string[] {
   return value.split(",").map((entry) => entry.trim()).filter(Boolean);
 }
@@ -990,16 +995,18 @@ program
   .option("--client <name>", "claude | opencode | generic", "claude")
   .description("Print the MCP client configuration for this DevMemory installation")
   .action((options: { client: string }) => {
-    const serverPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../mcp-server/dist/main.js");
-
-    const entry = { command: process.execPath, args: [serverPath] };
+    // After a global install this command is on PATH. Inside a checkout it is not,
+    // so the built entry point is offered as the fallback.
+    const installed = { command: "devmemory-mcp-server", args: [] as string[] };
+    const fromCheckout = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../mcp-server/dist/main.js");
+    const entry = fs.existsSync(fromCheckout) ? { command: process.execPath, args: [fromCheckout] } : installed;
     if (options.client === "opencode") {
       print(JSON.stringify({ mcp: { devmemory: { type: "local", command: [entry.command, ...entry.args], enabled: true } } }, null, 2));
     } else if (options.client === "claude") {
       print(JSON.stringify({ mcpServers: { devmemory: entry } }, null, 2));
       print("");
       print("Or register it directly:");
-      print(`  claude mcp add devmemory --scope user -- "${entry.command}" "${serverPath}"`);
+      print(`  claude mcp add devmemory --scope user -- ${[entry.command, ...entry.args].map(quoteIfNeeded).join(" ")}`);
     } else {
       print(JSON.stringify({ name: "devmemory", transport: "stdio", ...entry }, null, 2));
     }

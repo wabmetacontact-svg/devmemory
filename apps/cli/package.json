@@ -1,6 +1,6 @@
 {
   "name": "devmemory-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Persistent development intelligence for AI coding agents. One global install, any project, any MCP agent.",
   "keywords": [
     "mcp",
@@ -27,7 +27,8 @@
   "type": "module",
   "main": "./dist/bin.js",
   "bin": {
-    "devmemory": "./dist/bin.js"
+    "devmemory": "./dist/bin.js",
+    "devmemory-mcp-server": "./dist/mcp.js"
   },
   "files": [
     "dist",
@@ -44,6 +45,7 @@
     "@samirthakur024/storage": "workspace:*",
     "@samirthakur024/mcp": "workspace:*",
     "commander": "^15.0.0",
-    "@samirthakur024/dashboard": "workspace:*"
+    "@samirthakur024/dashboard": "workspace:*",
+    "@samirthakur024/mcp-server": "workspace:*"
   }
 }

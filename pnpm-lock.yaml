@@ -38,6 +38,9 @@ importers:
       '@samirthakur024/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
+      '@samirthakur024/mcp-server':
+        specifier: workspace:*
+        version: link:../mcp-server
       '@samirthakur024/shared':
         specifier: workspace:*
         version: link:../../packages/shared
