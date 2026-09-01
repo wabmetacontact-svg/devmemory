@@ -17,7 +17,7 @@ devmemory mcp-config --client claude
 ```
 
 Full documentation, the tool list and the architecture notes are in the
-[main repository](https://github.com/GITHUB_USER/devmemory#readme).
+[main repository](https://github.com/wabmetacontact-svg/devmemory#readme).
 
 ## License
 

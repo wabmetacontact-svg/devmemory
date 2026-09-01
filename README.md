@@ -296,7 +296,7 @@ Everything platform-specific lives behind `resolveHome()` and `normalizePath()`.
 ## Development
 
 ```bash
-git clone https://github.com/GITHUB_USER/devmemory.git
+git clone https://github.com/wabmetacontact-svg/devmemory.git
 cd devmemory
 pnpm install
 

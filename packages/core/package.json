@@ -13,13 +13,13 @@
     "project-memory"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/GITHUB_USER/devmemory#readme",
+  "homepage": "https://github.com/wabmetacontact-svg/devmemory#readme",
   "bugs": {
-    "url": "https://github.com/GITHUB_USER/devmemory/issues"
+    "url": "https://github.com/wabmetacontact-svg/devmemory/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GITHUB_USER/devmemory.git",
+    "url": "git+https://github.com/wabmetacontact-svg/devmemory.git",
     "directory": "packages/core"
   },
   "type": "module",
