@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { DevMemoryError, projectLayout } from "@devmemory/shared";
+import { DevMemoryError, projectLayout } from "@samirthakur024/shared";
 import { cleanupAll, makeDevMemory, makeHome, makeProject } from "./helpers.js";
 
 afterAll(cleanupAll);

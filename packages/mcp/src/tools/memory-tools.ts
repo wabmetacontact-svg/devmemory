@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MEMORY_TYPES, type MemoryRecord } from "@devmemory/core";
+import { MEMORY_TYPES, type MemoryRecord } from "@samirthakur024/core";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
 
 function compact(memory: MemoryRecord & { score?: number }) {

@@ -8,10 +8,10 @@ import {
   resolveHome,
   writeJsonAtomic,
   projectLayout,
-} from "@devmemory/shared";
-import type { DevMemoryConfig, IndexRunStats, ProjectDetection, ProjectRecord } from "@devmemory/shared";
-import { DatabaseManager, type SqliteDriver } from "@devmemory/storage";
-import { FilesystemIndexer, FileStore, SearchStore, SymbolStore, type CodeStats, type FileStats } from "@devmemory/indexer";
+} from "@samirthakur024/shared";
+import type { DevMemoryConfig, IndexRunStats, ProjectDetection, ProjectRecord } from "@samirthakur024/shared";
+import { DatabaseManager, type SqliteDriver } from "@samirthakur024/storage";
+import { FilesystemIndexer, FileStore, SearchStore, SymbolStore, type CodeStats, type FileStats } from "@samirthakur024/indexer";
 import { GitEngine, type GitStatus } from "../git/git-engine.js";
 import { CodeIntelligence } from "../code/code-intelligence.js";
 import { ContextEngine } from "../context/context-engine.js";

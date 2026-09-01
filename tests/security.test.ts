@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { isSensitiveFile, redactSecrets, containsSecret, REDACTED } from "@devmemory/indexer";
-import { PermissionEngine, assessOperation, safeProjectPath } from "@devmemory/core";
+import { isSensitiveFile, redactSecrets, containsSecret, REDACTED } from "@samirthakur024/indexer";
+import { PermissionEngine, assessOperation, safeProjectPath } from "@samirthakur024/core";
 import { FAKE_SECRETS, cleanupAll, makeDevMemory, makeProject, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);

@@ -1,4 +1,4 @@
-# @devmemory/indexer
+# @samirthakur024/indexer
 
 Incremental filesystem indexer, tree-sitter code intelligence and FTS5 search for DevMemory.
 

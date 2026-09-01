@@ -1,5 +1,5 @@
 {
-  "name": "@devmemory/storage",
+  "name": "@samirthakur024/storage",
   "version": "0.1.0",
   "description": "SQLite storage layer for DevMemory: driver interface, migrations and database management.",
   "keywords": [
@@ -43,6 +43,6 @@
     "access": "public"
   },
   "dependencies": {
-    "@devmemory/shared": "workspace:*"
+    "@samirthakur024/shared": "workspace:*"
   }
 }

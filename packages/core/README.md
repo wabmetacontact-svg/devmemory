@@ -1,4 +1,4 @@
-# @devmemory/core
+# @samirthakur024/core
 
 DevMemory core engines: project resolution, git, context, memory, tasks, sessions and recovery.
 

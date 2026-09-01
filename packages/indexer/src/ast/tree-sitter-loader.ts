@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { Language, Parser } from "web-tree-sitter";
-import { DevMemoryError } from "@devmemory/shared";
+import { DevMemoryError } from "@samirthakur024/shared";
 
 const require = createRequire(import.meta.url);
 

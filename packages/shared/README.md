@@ -1,4 +1,4 @@
-# @devmemory/shared
+# @samirthakur024/shared
 
 Shared types, paths, configuration and token estimation for DevMemory.
 

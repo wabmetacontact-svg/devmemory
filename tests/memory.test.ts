@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import fs from "node:fs";
-import { projectLayout } from "@devmemory/shared";
+import { projectLayout } from "@samirthakur024/shared";
 import { cleanupAll, git, makeDevMemory, makeHome, makeProject } from "./helpers.js";
 
 afterAll(cleanupAll);

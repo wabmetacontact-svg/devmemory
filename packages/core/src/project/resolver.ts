@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { DevMemoryError, normalizePath, projectIdFromIdentity, sha256 } from "@devmemory/shared";
-import type { IdentitySource, ProjectIdentity } from "@devmemory/shared";
+import { DevMemoryError, normalizePath, projectIdFromIdentity, sha256 } from "@samirthakur024/shared";
+import type { IdentitySource, ProjectIdentity } from "@samirthakur024/shared";
 import { GitEngine, normalizeRemoteUrl } from "../git/git-engine.js";
 
 /** Files that mark the root of a project when there is no git repository. */

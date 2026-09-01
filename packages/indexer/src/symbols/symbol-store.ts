@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from "@devmemory/storage";
+import type { SqliteDatabase } from "@samirthakur024/storage";
 import type { ParseResult } from "../ast/types.js";
 import type { ImportResolver } from "../dependencies/import-resolver.js";
 import { SearchStore } from "../search/search-store.js";

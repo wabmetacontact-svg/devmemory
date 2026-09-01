@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { Logger } from "@devmemory/shared";
-import type { DevMemory } from "@devmemory/core";
+import type { Logger } from "@samirthakur024/shared";
+import type { DevMemory } from "@samirthakur024/core";
 import { ALL_TOOLS } from "./tools/index.js";
 import { toToolError, type ToolContext, type ToolDefinition } from "./tool-context.js";
 

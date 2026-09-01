@@ -1,5 +1,5 @@
-import { DevMemoryError, nowIso, sha256, shortId } from "@devmemory/shared";
-import type { SqliteDatabase } from "@devmemory/storage";
+import { DevMemoryError, nowIso, sha256, shortId } from "@samirthakur024/shared";
+import type { SqliteDatabase } from "@samirthakur024/storage";
 
 /** Memory kinds from PRD 27. */
 export const MEMORY_TYPES = ["FACT", "DECISION", "DISCOVERY", "BUG", "PATTERN", "CONSTRAINT", "HISTORY"] as const;

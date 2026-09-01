@@ -80,7 +80,7 @@ export class ImportResolver {
     return external(packageNameOf(specifier));
   }
 
-  /** "@devmemory/core" -> "packages/core/src/index.ts" in this repository. */
+  /** "@samirthakur024/core" -> "packages/core/src/index.ts" in this repository. */
   private resolveWorkspacePackage(specifier: string): string | null {
     for (const workspacePackage of this.workspacePackages) {
       if (specifier !== workspacePackage.name && !specifier.startsWith(`${workspacePackage.name}/`)) continue;

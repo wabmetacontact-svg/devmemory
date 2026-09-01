@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { StoredSymbol } from "@devmemory/indexer";
+import type { StoredSymbol } from "@samirthakur024/indexer";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
 
 const SYMBOL_TYPES = [

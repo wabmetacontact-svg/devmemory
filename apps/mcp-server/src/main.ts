@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { DevMemory } from "@devmemory/core";
-import { createDevMemoryServer } from "@devmemory/mcp";
-import { createLogger, loadConfig, requireSupportedRuntime } from "@devmemory/shared";
+import { DevMemory } from "@samirthakur024/core";
+import { createDevMemoryServer } from "@samirthakur024/mcp";
+import { createLogger, loadConfig, requireSupportedRuntime } from "@samirthakur024/shared";
 
 /**
  * DevMemory MCP server (stdio). stdout carries the protocol, so every diagnostic

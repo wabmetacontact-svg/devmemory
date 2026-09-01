@@ -1,5 +1,5 @@
 {
-  "name": "@devmemory/core",
+  "name": "@samirthakur024/core",
   "version": "0.1.0",
   "description": "DevMemory core engines: project resolution, git, context, memory, tasks, sessions and recovery.",
   "keywords": [
@@ -44,8 +44,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@devmemory/shared": "workspace:*",
-    "@devmemory/storage": "workspace:*",
-    "@devmemory/indexer": "workspace:*"
+    "@samirthakur024/shared": "workspace:*",
+    "@samirthakur024/storage": "workspace:*",
+    "@samirthakur024/indexer": "workspace:*"
   }
 }

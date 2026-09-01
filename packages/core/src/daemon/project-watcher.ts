@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { relativePath } from "@devmemory/shared";
-import type { IndexRunStats, ProjectRecord } from "@devmemory/shared";
-import { IgnoreMatcher, isSensitiveFile } from "@devmemory/indexer";
+import { relativePath } from "@samirthakur024/shared";
+import type { IndexRunStats, ProjectRecord } from "@samirthakur024/shared";
+import { IgnoreMatcher, isSensitiveFile } from "@samirthakur024/indexer";
 import type { DevMemory } from "../project/project-service.js";
 
 export interface WatchEvent {

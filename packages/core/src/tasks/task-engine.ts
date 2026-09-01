@@ -1,6 +1,6 @@
-import { DevMemoryError, nowIso, shortId } from "@devmemory/shared";
-import type { SqliteDatabase } from "@devmemory/storage";
-import { toMatchQuery } from "@devmemory/indexer";
+import { DevMemoryError, nowIso, shortId } from "@samirthakur024/shared";
+import type { SqliteDatabase } from "@samirthakur024/storage";
+import { toMatchQuery } from "@samirthakur024/indexer";
 
 /** Task lifecycle states from PRD 30. */
 export const TASK_STATUSES = [

@@ -39,11 +39,11 @@
     "node": ">=24.0.0"
   },
   "dependencies": {
-    "@devmemory/shared": "workspace:*",
-    "@devmemory/core": "workspace:*",
-    "@devmemory/storage": "workspace:*",
-    "@devmemory/mcp": "workspace:*",
+    "@samirthakur024/shared": "workspace:*",
+    "@samirthakur024/core": "workspace:*",
+    "@samirthakur024/storage": "workspace:*",
+    "@samirthakur024/mcp": "workspace:*",
     "commander": "^15.0.0",
-    "@devmemory/dashboard": "workspace:*"
+    "@samirthakur024/dashboard": "workspace:*"
   }
 }

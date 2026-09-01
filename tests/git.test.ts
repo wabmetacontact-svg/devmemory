@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { GitEngine } from "@devmemory/core";
+import { GitEngine } from "@samirthakur024/core";
 import { cleanupAll, git, makeProject, writeFile } from "./helpers.js";
 
 const engine = new GitEngine();

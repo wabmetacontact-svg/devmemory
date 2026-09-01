@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { DevMemoryError } from "@devmemory/shared";
+import { DevMemoryError } from "@samirthakur024/shared";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
-import { redactSecrets } from "@devmemory/indexer";
+import { redactSecrets } from "@samirthakur024/indexer";
 
 /** Diffs can be enormous; agents get a bounded slice with an explicit truncation flag (PRD 24). */
 const MAX_DIFF_CHARS = 24_000;

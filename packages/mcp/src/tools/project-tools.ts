@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
-import type { ProjectRecord } from "@devmemory/shared";
+import type { ProjectRecord } from "@samirthakur024/shared";
 
 function projectSummary(project: ProjectRecord) {
   return {

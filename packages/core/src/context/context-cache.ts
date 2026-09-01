@@ -1,5 +1,5 @@
-import { nowIso, sha256, shortId } from "@devmemory/shared";
-import type { SqliteDatabase } from "@devmemory/storage";
+import { nowIso, sha256, shortId } from "@samirthakur024/shared";
+import type { SqliteDatabase } from "@samirthakur024/storage";
 import type { ContextResult } from "./context-engine.js";
 
 export interface CachedFile {

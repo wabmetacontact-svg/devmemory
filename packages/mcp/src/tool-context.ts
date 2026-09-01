@@ -1,6 +1,6 @@
 import type { ZodRawShape } from "zod";
-import { DevMemoryError, toDevMemoryError } from "@devmemory/shared";
-import type { DevMemory } from "@devmemory/core";
+import { DevMemoryError, toDevMemoryError } from "@samirthakur024/shared";
+import type { DevMemory } from "@samirthakur024/core";
 
 /** Operation classes from PRD 38. v1 ships READ and WRITE tools plus one guarded DESTRUCTIVE tool. */
 export type ToolPermission = "READ" | "WRITE" | "EXECUTE" | "DESTRUCTIVE";

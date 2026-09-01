@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import crypto from "node:crypto";
-import { DevMemoryError, normalizePath } from "@devmemory/shared";
-import type { DevMemoryConfig, IndexRunStats } from "@devmemory/shared";
-import type { SqliteDatabase } from "@devmemory/storage";
+import { DevMemoryError, normalizePath } from "@samirthakur024/shared";
+import type { DevMemoryConfig, IndexRunStats } from "@samirthakur024/shared";
+import type { SqliteDatabase } from "@samirthakur024/storage";
 import { FileStore } from "./file-store.js";
 import { IgnoreMatcher } from "./ignore.js";
 import { scanProject, type ScannedFile, type ScanResult } from "./walker.js";

@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import { DevMemoryError, estimateTokens } from "@devmemory/shared";
-import type { FileStore, StoredImport, StoredReference, StoredSymbol, SymbolStore } from "@devmemory/indexer";
-import { redactSecrets } from "@devmemory/indexer";
+import { DevMemoryError, estimateTokens } from "@samirthakur024/shared";
+import type { FileStore, StoredImport, StoredReference, StoredSymbol, SymbolStore } from "@samirthakur024/indexer";
+import { redactSecrets } from "@samirthakur024/indexer";
 
 export interface DefinitionResult {
   symbol: StoredSymbol;

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { estimateTokensForBytes } from "@devmemory/shared";
+import { estimateTokensForBytes } from "@samirthakur024/shared";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
 
 const findFile = defineTool({

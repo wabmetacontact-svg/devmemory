@@ -1,6 +1,6 @@
-import { DevMemoryError, normalizePath, nowIso } from "@devmemory/shared";
-import type { IdentitySource, IndexStatus, ProjectDetection, ProjectIdentity, ProjectRecord, ProjectStatus } from "@devmemory/shared";
-import type { DatabaseManager, SqliteDatabase } from "@devmemory/storage";
+import { DevMemoryError, normalizePath, nowIso } from "@samirthakur024/shared";
+import type { IdentitySource, IndexStatus, ProjectDetection, ProjectIdentity, ProjectRecord, ProjectStatus } from "@samirthakur024/shared";
+import type { DatabaseManager, SqliteDatabase } from "@samirthakur024/storage";
 
 interface ProjectRow {
   project_id: string;

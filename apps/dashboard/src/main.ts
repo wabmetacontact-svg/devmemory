@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { DevMemory } from "@devmemory/core";
-import { createLogger, loadConfig, requireSupportedRuntime } from "@devmemory/shared";
+import { DevMemory } from "@samirthakur024/core";
+import { createLogger, loadConfig, requireSupportedRuntime } from "@samirthakur024/shared";
 import { startDashboard } from "./server.js";
 
 /** Standalone entry point: `devmemory-dashboard`. */

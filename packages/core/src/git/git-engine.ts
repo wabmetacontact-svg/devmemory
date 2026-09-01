@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import fs from "node:fs";
-import { DevMemoryError, normalizePath } from "@devmemory/shared";
+import { DevMemoryError, normalizePath } from "@samirthakur024/shared";
 
 export interface GitCommit {
   hash: string;

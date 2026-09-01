@@ -1,4 +1,4 @@
-# @devmemory/dashboard
+# @samirthakur024/dashboard
 
 Local web dashboard for DevMemory: projects, tasks, memory, changes, sessions and analytics.
 

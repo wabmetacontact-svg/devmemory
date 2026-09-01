@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { ProjectDetection } from "@devmemory/shared";
+import type { ProjectDetection } from "@samirthakur024/shared";
 
 export interface DetectionContext {
   root: string;

@@ -1,5 +1,5 @@
-import { nowIso } from "@devmemory/shared";
-import type { ProjectRecord } from "@devmemory/shared";
+import { nowIso } from "@samirthakur024/shared";
+import type { ProjectRecord } from "@samirthakur024/shared";
 import type { MemoryEngine } from "../memory/memory-engine.js";
 import type { GitEngine } from "../git/git-engine.js";
 import type { Task, TaskEngine } from "../tasks/task-engine.js";

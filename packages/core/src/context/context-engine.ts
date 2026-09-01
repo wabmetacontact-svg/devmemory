@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
-import { estimateTokens, shortId } from "@devmemory/shared";
-import type { ProjectRecord } from "@devmemory/shared";
-import type { FileStore, SearchStore, StoredSymbol, SymbolStore } from "@devmemory/indexer";
-import { redactSecrets } from "@devmemory/indexer";
+import { estimateTokens, shortId } from "@samirthakur024/shared";
+import type { ProjectRecord } from "@samirthakur024/shared";
+import type { FileStore, SearchStore, StoredSymbol, SymbolStore } from "@samirthakur024/indexer";
+import { redactSecrets } from "@samirthakur024/indexer";
 import type { GitEngine } from "../git/git-engine.js";
 import { CodeIntelligence, looksLikeTest } from "../code/code-intelligence.js";
 import type { MemoryEngine } from "../memory/memory-engine.js";

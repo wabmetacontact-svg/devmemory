@@ -1,5 +1,5 @@
 {
-  "name": "@devmemory/indexer",
+  "name": "@samirthakur024/indexer",
   "version": "0.1.0",
   "description": "Incremental filesystem indexer, tree-sitter code intelligence and FTS5 search for DevMemory.",
   "keywords": [
@@ -45,8 +45,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@devmemory/shared": "workspace:*",
-    "@devmemory/storage": "workspace:*",
+    "@samirthakur024/shared": "workspace:*",
+    "@samirthakur024/storage": "workspace:*",
     "web-tree-sitter": "^0.27.0",
     "@vscode/tree-sitter-wasm": "^0.3.1"
   }

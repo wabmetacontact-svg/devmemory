@@ -2,9 +2,9 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { DevMemory } from "@devmemory/core";
-import { defaultConfig, normalizePath } from "@devmemory/shared";
-import type { DevMemoryConfig } from "@devmemory/shared";
+import { DevMemory } from "@samirthakur024/core";
+import { defaultConfig, normalizePath } from "@samirthakur024/shared";
+import type { DevMemoryConfig } from "@samirthakur024/shared";
 
 const created: string[] = [];
 

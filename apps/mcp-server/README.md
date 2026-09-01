@@ -1,4 +1,4 @@
-# @devmemory/mcp-server
+# @samirthakur024/mcp-server
 
 DevMemory MCP server (stdio) for Claude Code, OpenCode and any MCP-compatible agent.
 

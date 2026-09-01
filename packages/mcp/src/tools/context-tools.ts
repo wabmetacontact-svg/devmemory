@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ContextResult } from "@devmemory/core";
+import type { ContextResult } from "@samirthakur024/core";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
 
 function payload(result: ContextResult) {

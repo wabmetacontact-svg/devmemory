@@ -1,4 +1,4 @@
-# @devmemory/mcp
+# @samirthakur024/mcp
 
 The DevMemory MCP tool surface: project, context, memory, task, code, git and security tools.
 

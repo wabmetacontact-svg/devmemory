@@ -1,5 +1,5 @@
-import { DevMemoryError, nowIso, shortId } from "@devmemory/shared";
-import type { SqliteDatabase } from "@devmemory/storage";
+import { DevMemoryError, nowIso, shortId } from "@samirthakur024/shared";
+import type { SqliteDatabase } from "@samirthakur024/storage";
 import type { GitEngine } from "../git/git-engine.js";
 import type { TaskEngine } from "../tasks/task-engine.js";
 

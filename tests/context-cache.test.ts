@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { ContextCache } from "@devmemory/core";
+import { ContextCache } from "@samirthakur024/core";
 import { cleanupAll, git, makeDevMemory, makeProject, removeFile, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);

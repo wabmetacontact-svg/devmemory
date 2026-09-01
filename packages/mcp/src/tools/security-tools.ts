@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { assessOperation } from "@devmemory/core";
+import { assessOperation } from "@samirthakur024/core";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
 
 const checkOperation = defineTool({

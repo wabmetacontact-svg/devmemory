@@ -1,4 +1,4 @@
-import { DevMemoryError } from "@devmemory/shared";
+import { DevMemoryError } from "@samirthakur024/shared";
 import type { SqliteDatabase } from "./driver.js";
 
 export interface Migration {

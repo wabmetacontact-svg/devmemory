@@ -7,8 +7,8 @@ import {
   REGISTRY_MIGRATIONS,
   migrate,
   nodeSqliteDriver,
-} from "@devmemory/storage";
-import { defaultConfig, homeLayout, loadConfig, saveConfig } from "@devmemory/shared";
+} from "@samirthakur024/storage";
+import { defaultConfig, homeLayout, loadConfig, saveConfig } from "@samirthakur024/shared";
 import { cleanupAll, makeDevMemory, makeHome, makeProject } from "./helpers.js";
 
 afterAll(cleanupAll);

@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createDevMemoryServer } from "@devmemory/mcp";
+import { createDevMemoryServer } from "@samirthakur024/mcp";
 import { cleanupAll, makeDevMemory, makeProject } from "./helpers.js";
 
 afterAll(cleanupAll);

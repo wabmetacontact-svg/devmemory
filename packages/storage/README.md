@@ -1,4 +1,4 @@
-# @devmemory/storage
+# @samirthakur024/storage
 
 SQLite storage layer for DevMemory: driver interface, migrations and database management.
 

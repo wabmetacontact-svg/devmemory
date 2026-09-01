@@ -1,6 +1,6 @@
-import { nowIso } from "@devmemory/shared";
-import type { IndexedFile, IndexRunStats } from "@devmemory/shared";
-import type { SqliteDatabase } from "@devmemory/storage";
+import { nowIso } from "@samirthakur024/shared";
+import type { IndexedFile, IndexRunStats } from "@samirthakur024/shared";
+import type { SqliteDatabase } from "@samirthakur024/storage";
 
 export interface ExistingFileRow {
   id: number;

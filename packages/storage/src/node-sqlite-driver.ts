@@ -3,7 +3,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 import type { DatabaseSync as DatabaseSyncType } from "node:sqlite";
 import "./suppress-experimental-warning.js";
-import { DevMemoryError } from "@devmemory/shared";
+import { DevMemoryError } from "@samirthakur024/shared";
 import type { OpenOptions, SqliteDatabase, SqliteDriver, SqliteStatement, SqlValue } from "./driver.js";
 
 type DatabaseSyncConstructor = new (location: string, options?: { readOnly?: boolean }) => DatabaseSyncType;

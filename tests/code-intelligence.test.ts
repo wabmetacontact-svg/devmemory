@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { looksLikeTest } from "@devmemory/core";
+import { looksLikeTest } from "@samirthakur024/core";
 import { cleanupAll, makeDevMemory, makeProject, removeFile, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);

@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { homeLayout, nowIso } from "@devmemory/shared";
-import type { Logger } from "@devmemory/shared";
+import { homeLayout, nowIso } from "@samirthakur024/shared";
+import type { Logger } from "@samirthakur024/shared";
 import type { DevMemory } from "../project/project-service.js";
 import { ProjectWatcher, type WatchEvent } from "./project-watcher.js";
 

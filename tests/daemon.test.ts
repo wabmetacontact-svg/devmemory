@@ -1,8 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { DevMemoryDaemon, ProjectWatcher } from "@devmemory/core";
-import type { WatchEvent } from "@devmemory/core";
+import { DevMemoryDaemon, ProjectWatcher } from "@samirthakur024/core";
+import type { WatchEvent } from "@samirthakur024/core";
 import { cleanupAll, git, makeDevMemory, makeProject, removeFile, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);

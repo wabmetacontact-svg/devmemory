@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { cleanupAll, makeDevMemory, makeProject } from "./helpers.js";
-import type { DevMemory } from "@devmemory/core";
+import type { DevMemory } from "@samirthakur024/core";
 
 afterAll(cleanupAll);
 

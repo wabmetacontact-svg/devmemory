@@ -1,5 +1,5 @@
-import { DevMemoryError, loadConfig } from "@devmemory/shared";
-import type { DevMemory, MemoryType, TaskStatus } from "@devmemory/core";
+import { DevMemoryError, loadConfig } from "@samirthakur024/shared";
+import type { DevMemory, MemoryType, TaskStatus } from "@samirthakur024/core";
 
 export interface ApiRequest {
   method: string;

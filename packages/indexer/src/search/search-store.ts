@@ -1,4 +1,4 @@
-import type { SqliteDatabase } from "@devmemory/storage";
+import type { SqliteDatabase } from "@samirthakur024/storage";
 
 export interface FileSearchHit {
   fileId: number;

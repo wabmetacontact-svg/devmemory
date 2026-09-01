@@ -3,10 +3,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { createDevMemoryServer } from "@devmemory/mcp";
-import { startDashboard } from "@devmemory/dashboard";
-import { defaultConfig, homeLayout } from "@devmemory/shared";
-import type { DevMemory } from "@devmemory/core";
+import { createDevMemoryServer } from "@samirthakur024/mcp";
+import { startDashboard } from "@samirthakur024/dashboard";
+import { defaultConfig, homeLayout } from "@samirthakur024/shared";
+import type { DevMemory } from "@samirthakur024/core";
 import { FAKE_SECRETS, cleanupAll, git, makeDevMemory, makeHome, makeProject, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);

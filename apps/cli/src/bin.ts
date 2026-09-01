@@ -13,8 +13,8 @@ import {
   saveConfig,
   requireSupportedRuntime,
   toDevMemoryError,
-} from "@devmemory/shared";
-import type { ProjectRecord } from "@devmemory/shared";
+} from "@samirthakur024/shared";
+import type { ProjectRecord } from "@samirthakur024/shared";
 import {
   DevMemory,
   DevMemoryDaemon,
@@ -23,10 +23,10 @@ import {
   isProcessAlive,
   readDaemonRecord,
   writeDaemonRecord,
-} from "@devmemory/core";
-import type { MemoryType, TaskPriority, TaskStatus } from "@devmemory/core";
-import { ALL_TOOLS } from "@devmemory/mcp";
-import { startDashboard } from "@devmemory/dashboard";
+} from "@samirthakur024/core";
+import type { MemoryType, TaskPriority, TaskStatus } from "@samirthakur024/core";
+import { ALL_TOOLS } from "@samirthakur024/mcp";
+import { startDashboard } from "@samirthakur024/dashboard";
 
 requireSupportedRuntime();
 

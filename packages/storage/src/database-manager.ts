@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import { DevMemoryError, ensureHome, ensureProjectDirs, homeLayout, projectLayout, resolveHome } from "@devmemory/shared";
+import { DevMemoryError, ensureHome, ensureProjectDirs, homeLayout, projectLayout, resolveHome } from "@samirthakur024/shared";
 import type { SqliteDatabase, SqliteDriver } from "./driver.js";
 import { nodeSqliteDriver } from "./node-sqlite-driver.js";
 import { migrate } from "./migrator.js";

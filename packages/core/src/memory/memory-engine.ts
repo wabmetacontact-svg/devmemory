@@ -1,5 +1,5 @@
-import { DevMemoryError, nowIso } from "@devmemory/shared";
-import { toMatchQuery } from "@devmemory/indexer";
+import { DevMemoryError, nowIso } from "@samirthakur024/shared";
+import { toMatchQuery } from "@samirthakur024/indexer";
 import {
   MemoryStore,
   MEMORY_TYPES,

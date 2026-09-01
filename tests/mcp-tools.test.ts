@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { z } from "zod";
-import { ALL_TOOLS, type ToolContext, type ToolDefinition } from "@devmemory/mcp";
-import type { DevMemory } from "@devmemory/core";
+import { ALL_TOOLS, type ToolContext, type ToolDefinition } from "@samirthakur024/mcp";
+import type { DevMemory } from "@samirthakur024/core";
 import { FAKE_SECRETS, cleanupAll, makeDevMemory, makeProject, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);

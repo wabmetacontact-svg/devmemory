@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { startDashboard, type RunningDashboard } from "@devmemory/dashboard";
-import type { DevMemory } from "@devmemory/core";
+import { startDashboard, type RunningDashboard } from "@samirthakur024/dashboard";
+import type { DevMemory } from "@samirthakur024/core";
 import { cleanupAll, makeDevMemory, makeProject } from "./helpers.js";
 
 afterAll(cleanupAll);

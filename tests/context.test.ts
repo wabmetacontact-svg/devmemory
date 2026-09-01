@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { detectIntent, parseRequest } from "@devmemory/core";
-import { splitIdentifier, toMatchQuery } from "@devmemory/indexer";
+import { detectIntent, parseRequest } from "@samirthakur024/core";
+import { splitIdentifier, toMatchQuery } from "@samirthakur024/indexer";
 import { FAKE_SECRETS, cleanupAll, makeDevMemory, makeProject, removeFile, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);

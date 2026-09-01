@@ -1,8 +1,8 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { homeLayout, projectLayout } from "@devmemory/shared";
-import type { ProjectRecord } from "@devmemory/shared";
+import { homeLayout, projectLayout } from "@samirthakur024/shared";
+import type { ProjectRecord } from "@samirthakur024/shared";
 import type { DevMemory } from "../project/project-service.js";
 
 export type IssueSeverity = "error" | "warning";

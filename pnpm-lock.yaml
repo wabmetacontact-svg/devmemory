@@ -29,19 +29,19 @@ importers:
 
   apps/cli:
     dependencies:
-      '@devmemory/core':
+      '@samirthakur024/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@devmemory/dashboard':
+      '@samirthakur024/dashboard':
         specifier: workspace:*
         version: link:../dashboard
-      '@devmemory/mcp':
+      '@samirthakur024/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
-      '@devmemory/shared':
+      '@samirthakur024/shared':
         specifier: workspace:*
         version: link:../../packages/shared
-      '@devmemory/storage':
+      '@samirthakur024/storage':
         specifier: workspace:*
         version: link:../../packages/storage
       commander:
@@ -50,46 +50,46 @@ importers:
 
   apps/dashboard:
     dependencies:
-      '@devmemory/core':
+      '@samirthakur024/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@devmemory/shared':
+      '@samirthakur024/shared':
         specifier: workspace:*
         version: link:../../packages/shared
 
   apps/mcp-server:
     dependencies:
-      '@devmemory/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@devmemory/mcp':
-        specifier: workspace:*
-        version: link:../../packages/mcp
-      '@devmemory/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.5.4)
+      '@samirthakur024/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@samirthakur024/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
+      '@samirthakur024/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
 
   packages/core:
     dependencies:
-      '@devmemory/indexer':
+      '@samirthakur024/indexer':
         specifier: workspace:*
         version: link:../indexer
-      '@devmemory/shared':
+      '@samirthakur024/shared':
         specifier: workspace:*
         version: link:../shared
-      '@devmemory/storage':
+      '@samirthakur024/storage':
         specifier: workspace:*
         version: link:../storage
 
   packages/indexer:
     dependencies:
-      '@devmemory/shared':
+      '@samirthakur024/shared':
         specifier: workspace:*
         version: link:../shared
-      '@devmemory/storage':
+      '@samirthakur024/storage':
         specifier: workspace:*
         version: link:../storage
       '@vscode/tree-sitter-wasm':
@@ -101,18 +101,18 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@devmemory/core':
-        specifier: workspace:*
-        version: link:../core
-      '@devmemory/indexer':
-        specifier: workspace:*
-        version: link:../indexer
-      '@devmemory/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@modelcontextprotocol/sdk':
         specifier: ^1.30.0
         version: 1.30.0(zod@4.5.4)
+      '@samirthakur024/core':
+        specifier: workspace:*
+        version: link:../core
+      '@samirthakur024/indexer':
+        specifier: workspace:*
+        version: link:../indexer
+      '@samirthakur024/shared':
+        specifier: workspace:*
+        version: link:../shared
       zod:
         specifier: ^4.5.4
         version: 4.5.4
@@ -128,7 +128,7 @@ importers:
 
   packages/storage:
     dependencies:
-      '@devmemory/shared':
+      '@samirthakur024/shared':
         specifier: workspace:*
         version: link:../shared
 

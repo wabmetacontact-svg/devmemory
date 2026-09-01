@@ -9,12 +9,12 @@ export default defineConfig({
   resolve: {
     // Tests run against the TypeScript sources so a build is never a prerequisite.
     alias: {
-      "@devmemory/shared": pkg("shared"),
-      "@devmemory/storage": pkg("storage"),
-      "@devmemory/indexer": pkg("indexer"),
-      "@devmemory/core": pkg("core"),
-      "@devmemory/mcp": pkg("mcp"),
-      "@devmemory/dashboard": path.join(root, "apps", "dashboard", "src", "index.ts"),
+      "@samirthakur024/shared": pkg("shared"),
+      "@samirthakur024/storage": pkg("storage"),
+      "@samirthakur024/indexer": pkg("indexer"),
+      "@samirthakur024/core": pkg("core"),
+      "@samirthakur024/mcp": pkg("mcp"),
+      "@samirthakur024/dashboard": path.join(root, "apps", "dashboard", "src", "index.ts"),
     },
   },
   test: {

@@ -1,8 +1,8 @@
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import { DevMemoryError } from "@devmemory/shared";
-import type { Logger } from "@devmemory/shared";
-import type { DevMemory } from "@devmemory/core";
+import { DevMemoryError } from "@samirthakur024/shared";
+import type { Logger } from "@samirthakur024/shared";
+import type { DevMemory } from "@samirthakur024/core";
 import { handleApi, type ApiRequest } from "./api.js";
 import { DASHBOARD_HTML } from "./ui.js";
 

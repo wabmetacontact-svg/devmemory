@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { normalizePath, relativePath } from "@devmemory/shared";
+import { normalizePath, relativePath } from "@samirthakur024/shared";
 import { IgnoreMatcher } from "./ignore.js";
 import { extensionOf, isBinaryExtension, languageOf } from "./language.js";
 import { isSensitiveFile } from "../security/sensitive.js";

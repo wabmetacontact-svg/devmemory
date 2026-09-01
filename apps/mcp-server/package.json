@@ -1,5 +1,5 @@
 {
-  "name": "@devmemory/mcp-server",
+  "name": "@samirthakur024/mcp-server",
   "version": "0.1.0",
   "description": "DevMemory MCP server (stdio) for Claude Code, OpenCode and any MCP-compatible agent.",
   "keywords": [
@@ -40,9 +40,9 @@
     "access": "public"
   },
   "dependencies": {
-    "@devmemory/shared": "workspace:*",
-    "@devmemory/core": "workspace:*",
-    "@devmemory/mcp": "workspace:*",
+    "@samirthakur024/shared": "workspace:*",
+    "@samirthakur024/core": "workspace:*",
+    "@samirthakur024/mcp": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.30.0"
   }
 }

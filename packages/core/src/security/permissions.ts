@@ -1,4 +1,4 @@
-import { DevMemoryError } from "@devmemory/shared";
+import { DevMemoryError } from "@samirthakur024/shared";
 
 /** Operation classes from PRD 38. */
 export const PERMISSIONS = ["READ", "WRITE", "EXECUTE", "DESTRUCTIVE"] as const;

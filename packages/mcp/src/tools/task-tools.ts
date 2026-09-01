@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TASK_PRIORITIES, TASK_STATUSES, type Task } from "@devmemory/core";
+import { TASK_PRIORITIES, TASK_STATUSES, type Task } from "@samirthakur024/core";
 import { defineTool, resolveTarget, type ToolDefinition } from "../tool-context.js";
 
 function compact(task: Task) {

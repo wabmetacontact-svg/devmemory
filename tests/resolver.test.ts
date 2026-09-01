@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import path from "node:path";
 import os from "node:os";
-import { ProjectResolver, normalizeRemoteUrl } from "@devmemory/core";
+import { ProjectResolver, normalizeRemoteUrl } from "@samirthakur024/core";
 import { cleanupAll, makeDevMemory, makeProject, moveProject } from "./helpers.js";
 
 afterAll(cleanupAll);

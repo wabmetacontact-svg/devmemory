@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { ParserRegistry } from "@devmemory/indexer";
-import type { ParseResult } from "@devmemory/indexer";
+import { ParserRegistry } from "@samirthakur024/indexer";
+import type { ParseResult } from "@samirthakur024/indexer";
 
 const registry = new ParserRegistry();
 
