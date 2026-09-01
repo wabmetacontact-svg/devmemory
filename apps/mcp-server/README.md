@@ -7,7 +7,7 @@ Part of [DevMemory](https://github.com/wabmetacontact-svg/devmemory) — persist
 Most people want the CLI, not this package:
 
 ```bash
-npm install -g devmemory
+npm install -g devmemory-mcp
 devmemory init
 ```
 

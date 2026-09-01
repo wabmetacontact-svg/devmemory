@@ -46,7 +46,7 @@ Security exclusions (PRD 20/37) were in from the first indexing commit, because 
 ## Install
 
 ```bash
-npm install -g devmemory
+npm install -g devmemory-mcp
 devmemory init
 ```
 

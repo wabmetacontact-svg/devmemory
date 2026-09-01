@@ -1,9 +1,9 @@
-# devmemory
+# devmemory-mcp
 
 **Persistent development intelligence for AI coding agents.** One global installation, any project, any MCP-compatible agent — and nothing written inside your project folder.
 
 ```bash
-npm install -g devmemory
+npm install -g devmemory-mcp
 devmemory init
 
 cd your-project
