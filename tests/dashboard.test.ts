@@ -280,3 +280,78 @@ describe("dashboard data (PRD 43-53)", () => {
     }
   });
 });
+
+describe("file drill-down (PRD 48)", () => {
+  it("answers everything about one file in a single request", async () => {
+    const app = await harness();
+    try {
+      const file = await app.get(
+        `/api/projects/${app.projectId}/file?path=${encodeURIComponent("src/db/Ledger.ts")}`,
+      );
+
+      expect(file.path).toBe("src/db/Ledger.ts");
+      expect(file.language).toBe("typescript");
+      expect(file.symbols.map((symbol: { name: string }) => symbol.name)).toContain("Ledger");
+      expect(file.dependents.map((edge: { path: string }) => edge.path)).toContain("src/payment/PaymentService.ts");
+
+      // The question a file view exists to answer: what breaks if this changes.
+      expect(file.impact.total).toBeGreaterThan(0);
+      expect(file.impact.tests).toContain("tests/payment.test.ts");
+      expect(file.history.length).toBeGreaterThan(0);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("returns an editor-usable absolute path", async () => {
+    const app = await harness();
+    try {
+      const file = await app.get(
+        `/api/projects/${app.projectId}/file?path=${encodeURIComponent("src/db/Ledger.ts")}`,
+      );
+
+      // vscode://file/... needs forward slashes on every platform, including Windows.
+      expect(file.absolute_path).not.toContain("\\");
+      expect(file.absolute_path.endsWith("src/db/Ledger.ts")).toBe(true);
+      expect(file.absolute_path.startsWith("/") || /^[A-Za-z]:\//.test(file.absolute_path)).toBe(true);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("surfaces memory attached to the file", async () => {
+    const app = await harness();
+    try {
+      app.devmemory.memoryFor(app.projectId).remember({
+        type: "BUG",
+        title: "Ledger lookup is not idempotent",
+        content: "Calling find twice with the same id can double-count.",
+        paths: ["src/db/Ledger.ts"],
+      });
+
+      const file = await app.get(
+        `/api/projects/${app.projectId}/file?path=${encodeURIComponent("src/db/Ledger.ts")}`,
+      );
+      expect(file.memories.map((memory: { title: string }) => memory.title)).toContain(
+        "Ledger lookup is not idempotent",
+      );
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("refuses a file that is not indexed", async () => {
+    const app = await harness();
+    try {
+      const response = await fetch(
+        `${app.dashboard.url}/api/projects/${app.projectId}/file?path=${encodeURIComponent("src/nope.ts")}`,
+      );
+      expect(response.status).toBe(404);
+
+      const missingParam = await fetch(`${app.dashboard.url}/api/projects/${app.projectId}/file`);
+      expect(missingParam.status).toBe(404);
+    } finally {
+      await app.close();
+    }
+  });
+});

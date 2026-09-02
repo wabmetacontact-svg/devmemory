@@ -271,6 +271,64 @@ const PROJECT_ROUTES: Record<string, Handler> = {
     });
   },
 
+  /**
+   * Everything known about one file, in a single request: what it defines, what it
+   * depends on, who depends on it, what breaks if it changes, and its git history.
+   * This is what the dashboard's file view is built from.
+   */
+  "GET file": (devmemory, request) => {
+    const projectId = request.segments[0] as string;
+    const filePath = request.query.get("path");
+    if (!filePath) return notFound("path query parameter is required");
+
+    const project = devmemory.registry.get(projectId);
+    const record = devmemory.filesFor(projectId).get(projectId, filePath);
+    if (!project || !record || record.status !== "active") return notFound(`file is not indexed: ${filePath}`);
+
+    const code = devmemory.codeFor(projectId);
+    const intelligence = devmemory.codeIntelligence(projectId);
+
+    let impact: ReturnType<typeof intelligence.impact> | null = null;
+    try {
+      impact = intelligence.impact(filePath, { depth: 3 });
+    } catch {
+      impact = null;
+    }
+
+    const isGit = project.repositoryType === "git" && devmemory.git.isAvailable();
+    const history = isGit ? devmemory.git.log(project.rootPath, { limit: 10, file: filePath }) : [];
+
+    return ok({
+      path: record.relativePath,
+      // Forward-slashed: editor URIs (vscode://file/...) need it on every platform.
+      absolute_path: record.path.replace(/\\/g, "/"),
+      language: record.language,
+      size: record.size,
+      last_modified: new Date(record.lastModified).toISOString(),
+      indexed_at: record.indexedAt,
+      symbols: code.symbolsInFile(projectId, filePath, 200),
+      imports: code.importsOf(projectId, filePath),
+      dependencies: code.dependencies(projectId, filePath),
+      dependents: code.dependents(projectId, filePath),
+      impact: impact
+        ? {
+            direct: impact.direct,
+            transitive: impact.transitive,
+            tests: impact.tests,
+            exported_symbols: impact.exportedSymbols.map((symbol) => symbol.name),
+            total: impact.direct.length + impact.transitive.length,
+          }
+        : null,
+      history: history.map((commit) => ({
+        hash: commit.shortHash,
+        subject: commit.subject,
+        author: commit.author,
+        date: commit.date,
+      })),
+      memories: devmemory.memoryFor(projectId).recall({ path: filePath, limit: 5 }),
+    });
+  },
+
   /** PRD 52: the stack, as detected. */
   "GET architecture": (devmemory, request) => {
     const projectId = request.segments[0] as string;

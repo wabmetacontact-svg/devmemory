@@ -83,6 +83,13 @@ export const DASHBOARD_HTML = String.raw`<!doctype html>
   .empty { color: var(--muted); padding: 12px 0; }
   form.inline { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
   form.inline input { flex: 1; min-width: 180px; }
+  a.filelink { color: var(--accent); text-decoration: none; font-family: var(--mono); font-size: 12.5px; }
+  a.filelink:hover { text-decoration: underline; }
+  a.badge { text-decoration: none; }
+  a.badge:hover { border-color: var(--accent); color: var(--accent); }
+  .back { background: none; border: none; color: var(--muted); padding: 0 0 8px; }
+  .back:hover { color: var(--accent); }
+  .split { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
   pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 12.5px; }
 </style>
 </head>
@@ -100,7 +107,7 @@ export const DASHBOARD_HTML = String.raw`<!doctype html>
 <script>
 "use strict";
 var TABS = ["Overview","Projects","Tasks","Memory","Changes","Sessions","Code","Search","Analytics","Settings"];
-var state = { tab: "Overview", projectId: null, projects: [], query: "" };
+var state = { tab: "Overview", projectId: null, projects: [], query: "", file: null, previousTab: "Overview" };
 
 function el(id) { return document.getElementById(id); }
 function esc(value) {
@@ -145,6 +152,26 @@ function progressBar(progress) {
     '<span class="muted">' + (progress ? progress.done + "/" + progress.total : "0/0") + "</span></div>";
 }
 function shortDate(value) { return value ? String(value).slice(0, 19).replace("T", " ") : "-"; }
+
+// Any file path rendered anywhere becomes a way into the file view.
+function fileLink(path) {
+  return '<a href="#" class="filelink" data-file="' + esc(path) + '">' + esc(path) + "</a>";
+}
+
+// VS Code opens vscode://file/<absolute path>:<line>. The stored path is already
+// forward-slashed, which is what the scheme expects on every platform.
+function editorLink(absolute, line, label) {
+  var target = "vscode://file/" + encodeURI(absolute).replace(/#/g, "%23") + (line ? ":" + line : "");
+  return '<a class="badge" href="' + esc(target) + '" title="Open in VS Code">' + esc(label || "VS Code") + "</a>";
+}
+
+function openFile(path) {
+  if (state.tab !== "File") state.previousTab = state.tab;
+  state.file = path;
+  state.tab = "File";
+  drawTabs();
+  load();
+}
 function projectPath(suffix) { return "/projects/" + state.projectId + (suffix || ""); }
 
 var views = {
@@ -255,7 +282,7 @@ var views = {
       render(git +
         '<div class="panel"><h2>Working tree</h2>' +
         table(["File", "State"], data.status.map(function (file) {
-          return ['<span class="mono">' + esc(file.path) + "</span>",
+          return [fileLink(file.path),
             '<span class="badge">' + esc(file.untracked ? "untracked" : (file.index + file.worktree).trim()) + "</span>"];
         })) + "</div>" +
         '<div class="panel"><h2>Recent commits</h2>' +
@@ -287,7 +314,7 @@ var views = {
           card("Routes", (architecture.routes || []).length) + "</div>" +
           '<div class="panel"><h2>Most depended-on files</h2>' +
           table(["File", "Dependents", "Dependencies"], graph.files.map(function (file) {
-            return ['<span class="mono">' + esc(file.path) + "</span>", esc(file.dependents), esc(file.dependencies)];
+            return [fileLink(file.path), esc(file.dependents), esc(file.dependencies)];
           })) + "</div>" +
           '<div class="panel"><h2>External packages</h2>' +
           table(["Package", "Files"], (architecture.external_packages || []).map(function (entry) {
@@ -317,7 +344,7 @@ var views = {
         table(["Kind", "Match", "Where", "Relevance"], data.results.map(function (result) {
           return ['<span class="badge">' + esc(result.kind) + "</span>",
             esc(result.symbol ? result.symbol.name : (result.snippet ? result.snippet.text : result.path)),
-            '<span class="mono">' + esc(result.path) + "</span>", esc(result.relevance)];
+            fileLink(result.path), esc(result.relevance)];
         })) + "</div>" +
         '<div class="panel"><h2>Related memory</h2>' +
         table(["Type", "Title"], data.memories.map(function (memory) {
@@ -340,6 +367,83 @@ var views = {
         '<div class="panel"><h2>What this measures</h2><p class="muted">Every context request is recorded: ' +
         'whether it was served from cache, how many tokens it cost, and how many files it deliberately left out. ' +
         'These are counted, not estimated.</p></div>');
+    });
+  },
+
+  File: function () {
+    if (!state.file) { render('<p class="empty">No file selected.</p>'); return Promise.resolve(); }
+
+    return api(projectPath("/file?path=" + encodeURIComponent(state.file))).then(function (data) {
+      var impact = data.impact || { direct: [], transitive: [], tests: [], exported_symbols: [], total: 0 };
+
+      var header = '<button class="back">&larr; Back to ' + esc(state.previousTab) + "</button>" +
+        '<div class="panel"><div class="row" style="justify-content:space-between">' +
+        '<h2 style="margin:0">' + esc(data.path) + "</h2>" +
+        "<div class=\"row\">" + editorLink(data.absolute_path, 0, "Open in VS Code") +
+        '<span class="badge">' + esc(data.language || "text") + "</span>" +
+        '<span class="badge">' + esc(Math.round(data.size / 102.4) / 10) + " KB</span></div></div>" +
+        '<div class="muted">Last modified ' + esc(shortDate(data.last_modified)) + "</div></div>";
+
+      // What breaks if this changes - the question a file view exists to answer.
+      var impactCards = '<div class="grid">' +
+        card("Defines", data.symbols.length, "symbols") +
+        card("Depends on", data.dependencies.length, "files") +
+        card("Used by", data.dependents.length, "files") +
+        card("Blast radius", impact.total, "files, depth 3") +
+        card("Tests", impact.tests.length) + "</div>";
+
+      var symbols = '<div class="panel"><h2>Symbols</h2>' +
+        table(["Name", "Kind", "Line", "Exported", ""], data.symbols.map(function (symbol) {
+          return [esc(symbol.qualifiedName), '<span class="badge">' + esc(symbol.type) + "</span>",
+            esc(symbol.lineStart), symbol.exported ? '<span class="badge good">yes</span>' : "",
+            editorLink(data.absolute_path, symbol.lineStart, "line " + symbol.lineStart)];
+        })) + "</div>";
+
+      var relations = '<div class="split">' +
+        '<div class="panel"><h2>Depends on</h2>' +
+        (data.dependencies.length
+          ? "<ul>" + data.dependencies.map(function (edge) { return "<li>" + fileLink(edge.path) + "</li>"; }).join("") + "</ul>"
+          : '<p class="empty">Nothing inside this project.</p>') +
+        (data.imports.filter(function (i) { return i.external; }).length
+          ? '<div class="muted" style="margin-top:8px">External: ' +
+            esc(data.imports.filter(function (i) { return i.external; }).map(function (i) { return i.package; }).join(", ")) + "</div>"
+          : "") + "</div>" +
+        '<div class="panel"><h2>Used by</h2>' +
+        (data.dependents.length
+          ? "<ul>" + data.dependents.map(function (edge) { return "<li>" + fileLink(edge.path) + "</li>"; }).join("") + "</ul>"
+          : '<p class="empty">Nothing imports this file.</p>') + "</div></div>";
+
+      var blast = impact.transitive.length || impact.tests.length
+        ? '<div class="split"><div class="panel"><h2>Also affected (indirect)</h2>' +
+          (impact.transitive.length
+            ? "<ul>" + impact.transitive.map(function (path) { return "<li>" + fileLink(path) + "</li>"; }).join("") + "</ul>"
+            : '<p class="empty">Nothing beyond the direct users.</p>') + "</div>" +
+          '<div class="panel"><h2>Tests to run</h2>' +
+          (impact.tests.length
+            ? "<ul>" + impact.tests.map(function (path) { return "<li>" + fileLink(path) + "</li>"; }).join("") + "</ul>"
+            : '<p class="empty">No tests reach this file.</p>') + "</div></div>"
+        : "";
+
+      var memories = data.memories.length
+        ? '<div class="panel"><h2>What DevMemory knows about this file</h2>' +
+          table(["Type", "Title", "Content"], data.memories.map(function (memory) {
+            return ['<span class="badge">' + esc(memory.type) + "</span>", esc(memory.title),
+              '<span class="muted">' + esc(String(memory.content).slice(0, 160)) + "</span>"];
+          })) + "</div>"
+        : "";
+
+      var history = data.history.length
+        ? '<div class="panel"><h2>Recent commits touching this file</h2>' +
+          table(["Commit", "Subject", "Author", "When"], data.history.map(function (commit) {
+            return ['<span class="mono">' + esc(commit.hash) + "</span>", esc(commit.subject),
+              esc(commit.author), esc(shortDate(commit.date))];
+          })) + "</div>"
+        : "";
+
+      render(header + impactCards + symbols + relations + blast + memories + history);
+
+      var back = document.querySelector("button.back");
+      if (back) back.addEventListener("click", function () { state.tab = state.previousTab; drawTabs(); load(); });
     });
   },
 
@@ -399,7 +503,20 @@ function boot() {
     load();
   });
 
-  el("project").addEventListener("change", function (event) { state.projectId = event.target.value; load(); });
+  el("view").addEventListener("click", function (event) {
+    var link = event.target.closest ? event.target.closest("[data-file]") : null;
+    if (!link) return;
+    event.preventDefault();
+    openFile(link.getAttribute("data-file"));
+  });
+
+  el("project").addEventListener("change", function (event) {
+    state.projectId = event.target.value;
+    state.file = null;
+    if (state.tab === "File") state.tab = state.previousTab;
+    drawTabs();
+    load();
+  });
   el("refresh").addEventListener("click", load);
   el("reindex").addEventListener("click", function () {
     if (!state.projectId) return;
