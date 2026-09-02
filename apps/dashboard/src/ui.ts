@@ -90,6 +90,13 @@ export const DASHBOARD_HTML = String.raw`<!doctype html>
   .back { background: none; border: none; color: var(--muted); padding: 0 0 8px; }
   .back:hover { color: var(--accent); }
   .split { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .headline { background: var(--panel); border: 1px solid var(--accent); border-left-width: 4px;
+    border-radius: 10px; padding: 14px 16px; margin-top: 16px; }
+  .headline h3 { margin: 0 0 4px; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .6px; color: var(--muted); font-weight: 600; }
+  .headline .value { font-size: 16px; }
+  ul.plain { margin: 0; padding-left: 18px; }
+  ul.plain li { margin: 2px 0; }
   pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 12.5px; }
 </style>
 </head>
@@ -106,7 +113,7 @@ export const DASHBOARD_HTML = String.raw`<!doctype html>
 
 <script>
 "use strict";
-var TABS = ["Overview","Projects","Tasks","Memory","Changes","Sessions","Code","Search","Analytics","Settings"];
+var TABS = ["Overview","Handoff","Tasks","Issues","Memory","Code","Changes","Sessions","Search","Analytics","Security","Projects","Settings"];
 var state = { tab: "Overview", projectId: null, projects: [], query: "", file: null, previousTab: "Overview" };
 
 function el(id) { return document.getElementById(id); }
@@ -370,6 +377,142 @@ var views = {
     });
   },
 
+  /** PRD 32: what another agent - or you tomorrow - needs to carry on. */
+  Handoff: function () {
+    return api(projectPath("/handoff")).then(function (data) {
+      var task = data.currentTask;
+
+      var current = task
+        ? '<div class="panel"><h2>Current task</h2>' +
+          '<div class="row" style="justify-content:space-between">' +
+          "<div><strong>" + esc(task.key) + "</strong> " + esc(task.title) + "</div>" +
+          statusBadge(task.status) + "</div>" +
+          '<div style="margin-top:10px">' + progressBar(task.progress) + "</div>" +
+          (task.remaining.length
+            ? '<ul class="plain" style="margin-top:10px">' +
+              task.remaining.map(function (item) { return "<li>" + esc(item) + "</li>"; }).join("") + "</ul>"
+            : "") +
+          (task.blockedReason ? '<div class="muted" style="margin-top:8px">Blocked: ' + esc(task.blockedReason) + "</div>" : "") +
+          "</div>"
+        : '<div class="panel"><h2>Current task</h2><p class="empty">Nothing is in progress.</p></div>';
+
+      var session = data.lastSession
+        ? '<div class="panel"><h2>Last session</h2>' +
+          '<div class="row"><span class="badge">' + esc(data.lastSession.agent) + "</span>" +
+          '<span class="muted">' + esc(shortDate(data.lastSession.endedAt)) + "</span></div>" +
+          (data.lastSession.summary ? "<p>" + esc(data.lastSession.summary) + "</p>" : "") +
+          '<div class="split">' +
+          "<div><h3 class=\"muted\">Completed</h3>" +
+          (data.lastSession.completed.length
+            ? '<ul class="plain">' + data.lastSession.completed.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("") + "</ul>"
+            : '<span class="muted">-</span>') + "</div>" +
+          "<div><h3 class=\"muted\">Left</h3>" +
+          (data.lastSession.remaining.length
+            ? '<ul class="plain">' + data.lastSession.remaining.map(function (i) { return "<li>" + esc(i) + "</li>"; }).join("") + "</ul>"
+            : '<span class="muted">-</span>') + "</div></div>" +
+          (data.lastSession.filesChanged.length
+            ? '<div style="margin-top:10px">' + data.lastSession.filesChanged.map(fileLink).join(", ") + "</div>"
+            : "") +
+          "</div>"
+        : '<div class="panel"><h2>Last session</h2><p class="empty">No session has been recorded yet.</p></div>';
+
+      var knowledge = '<div class="split">' +
+        '<div class="panel"><h2>Decisions</h2>' +
+        (data.decisions.length
+          ? '<ul class="plain">' + data.decisions.map(function (d) {
+              return "<li>" + esc(d.title) + (d.reason ? ' <span class="muted">- ' + esc(d.reason) + "</span>" : "") + "</li>";
+            }).join("") + "</ul>"
+          : '<p class="empty">Nothing recorded.</p>') + "</div>" +
+        '<div class="panel"><h2>Constraints</h2>' +
+        (data.constraints.length
+          ? '<ul class="plain">' + data.constraints.map(function (c) { return "<li>" + esc(c.title) + "</li>"; }).join("") + "</ul>"
+          : '<p class="empty">Nothing recorded.</p>') + "</div></div>";
+
+      var issues = data.knownIssues.length
+        ? '<div class="panel"><h2>Known issues</h2>' +
+          table(["Source", "Issue", "Detail"], data.knownIssues.map(function (issue) {
+            return ['<span class="badge">' + esc(issue.source) + "</span>", esc(issue.title),
+              '<span class="muted">' + esc(issue.detail) + "</span>"];
+          })) + "</div>"
+        : "";
+
+      var changes = data.recentChanges.length
+        ? '<div class="panel"><h2>Changed since the last commit</h2>' +
+          data.recentChanges.map(fileLink).join(", ") + "</div>"
+        : "";
+
+      render('<div class="headline"><h3>Recommended next step</h3><div class="value">' +
+        esc(data.recommendedNextStep) + "</div></div>" +
+        current + session + knowledge + issues + changes);
+    });
+  },
+
+  /** PRD 49: everything that needs attention, from the stores that hold it. */
+  Issues: function () {
+    return api(projectPath("/issues")).then(function (data) {
+      var total = data.bugs.length + data.blocked_tasks.length + data.security.files;
+
+      render('<div class="grid">' +
+        card("Known bugs", data.bugs.length) +
+        card("Blocked tasks", data.blocked_tasks.length) +
+        card("Files with credentials", data.security.files) +
+        card("Total", total) + "</div>" +
+
+        '<div class="panel"><h2>Known bugs</h2>' +
+        table(["Title", "Detail", "Files"], data.bugs.map(function (bug) {
+          return [esc(bug.title), '<span class="muted">' + esc(String(bug.content).slice(0, 200)) + "</span>",
+            (bug.paths || []).map(fileLink).join(", ")];
+        })) + "</div>" +
+
+        '<div class="panel"><h2>Blocked tasks</h2>' +
+        table(["Key", "Title", "Blocked because"], data.blocked_tasks.map(function (task) {
+          return ['<span class="mono">' + esc(task.key) + "</span>", esc(task.title),
+            '<span class="muted">' + esc(task.blockedReason || "-") + "</span>"];
+        })) + "</div>" +
+
+        '<div class="panel"><h2>Files where a credential pattern was found</h2>' +
+        '<p class="muted">DevMemory records that a detector fired and where - never the secret itself.</p>' +
+        table(["File", "Detectors"], data.security.findings.map(function (finding) {
+          return [fileLink(finding.path),
+            finding.detectors.map(function (d) { return '<span class="badge warn">' + esc(d) + "</span>"; }).join(" ")];
+        })) + "</div>");
+    });
+  },
+
+  /** PRD 37, 38: what is being protected, and under what policy. */
+  Security: function () {
+    return api("/settings").then(function (settings) {
+      return api(projectPath("/issues")).then(function (data) {
+        var policy = settings.security.permissions;
+        var guarded = policy.DESTRUCTIVE !== "allow";
+
+        render('<div class="grid">' +
+          card("Destructive ops", policy.DESTRUCTIVE, guarded ? "guarded" : "UNGUARDED") +
+          card("Sensitive files", settings.security.blockSensitiveFiles ? "blocked" : "ALLOWED") +
+          card("Secret redaction", settings.security.redactSecrets ? "on" : "OFF") +
+          card("Secret scanning", settings.security.scanForSecrets ? "on" : "off") +
+          card("Flagged files", data.security.files) + "</div>" +
+
+          '<div class="panel"><h2>Operation policy</h2>' +
+          '<p class="muted">Every MCP tool declares one of these classes; the server checks it before the tool runs.</p>' +
+          table(["Class", "Rule", "Covers"], [
+            ["READ", '<span class="badge">' + esc(policy.READ) + "</span>", "queries, search, context, recall"],
+            ["WRITE", '<span class="badge">' + esc(policy.WRITE) + "</span>", "indexing, memory, tasks, sessions"],
+            ["EXECUTE", '<span class="badge">' + esc(policy.EXECUTE) + "</span>", "test and build runs"],
+            ["DESTRUCTIVE", '<span class="badge ' + (guarded ? "good" : "bad") + '">' + esc(policy.DESTRUCTIVE) + "</span>",
+              "deleting a project's intelligence"]
+          ]) +
+          '<p class="muted">Change these in ' + esc(settings.home) + "/config.json</p></div>" +
+
+          '<div class="panel"><h2>Files where a credential pattern was found</h2>' +
+          table(["File", "Detectors"], data.security.findings.map(function (finding) {
+            return [fileLink(finding.path),
+              finding.detectors.map(function (d) { return '<span class="badge warn">' + esc(d) + "</span>"; }).join(" ")];
+          })) + "</div>");
+      });
+    });
+  },
+
   File: function () {
     if (!state.file) { render('<p class="empty">No file selected.</p>'); return Promise.resolve(); }
 
@@ -404,9 +547,10 @@ var views = {
         (data.dependencies.length
           ? "<ul>" + data.dependencies.map(function (edge) { return "<li>" + fileLink(edge.path) + "</li>"; }).join("") + "</ul>"
           : '<p class="empty">Nothing inside this project.</p>') +
-        (data.imports.filter(function (i) { return i.external; }).length
+        (data.imports.filter(function (i) { return i.isExternal; }).length
           ? '<div class="muted" style="margin-top:8px">External: ' +
-            esc(data.imports.filter(function (i) { return i.external; }).map(function (i) { return i.package; }).join(", ")) + "</div>"
+            esc(data.imports.filter(function (i) { return i.isExternal; })
+              .map(function (i) { return i.packageName; }).join(", ")) + "</div>"
           : "") + "</div>" +
         '<div class="panel"><h2>Used by</h2>' +
         (data.dependents.length

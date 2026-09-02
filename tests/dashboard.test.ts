@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { startDashboard, type RunningDashboard } from "@samirthakur024/dashboard";
 import type { DevMemory } from "@samirthakur024/core";
-import { cleanupAll, makeDevMemory, makeProject } from "./helpers.js";
+import { FAKE_SECRETS, cleanupAll, makeDevMemory, makeProject } from "./helpers.js";
 
 afterAll(cleanupAll);
 
@@ -350,6 +350,73 @@ describe("file drill-down (PRD 48)", () => {
 
       const missingParam = await fetch(`${app.dashboard.url}/api/projects/${app.projectId}/file`);
       expect(missingParam.status).toBe(404);
+    } finally {
+      await app.close();
+    }
+  });
+});
+
+describe("issues, handoff and security views (PRD 32, 37, 49)", () => {
+  it("collects everything that needs attention in one place", async () => {
+    const app = await harness();
+    try {
+      app.devmemory.memoryFor(app.projectId).remember({
+        type: "BUG",
+        title: "Webhook can fire twice",
+        content: "The provider retries, so the handler must be idempotent.",
+        paths: ["src/payment/PaymentService.ts"],
+      });
+      const task = app.devmemory.tasksFor(app.projectId).create({ title: "Switch provider", status: "IN_PROGRESS" });
+      app.devmemory.tasksFor(app.projectId).update(task.key, {
+        status: "BLOCKED",
+        blockedReason: "Waiting on credentials",
+      });
+
+      const issues = await app.get(`/api/projects/${app.projectId}/issues`);
+
+      expect(issues.bugs.map((bug: { title: string }) => bug.title)).toContain("Webhook can fire twice");
+      expect(issues.blocked_tasks[0].blockedReason).toBe("Waiting on credentials");
+      expect(issues.security).toHaveProperty("files");
+    } finally {
+      await app.close();
+    }
+  });
+
+  it("reports credential findings without ever repeating the credential", async () => {
+    const root = makeProject({
+      name: "dashboard-secrets",
+      files: {
+        "package.json": JSON.stringify({ name: "dashboard-secrets" }),
+        "src/config.ts": `export const key = "${FAKE_SECRETS.githubToken}";\n`,
+      },
+    });
+    const devmemory = makeDevMemory();
+    const { project } = await devmemory.connect({ explicitRoot: root });
+    const dashboard = await startDashboard({ devmemory, port: 0 });
+
+    try {
+      const issues = await (await fetch(`${dashboard.url}/api/projects/${project.projectId}/issues`)).json();
+
+      expect(issues.security.files).toBe(1);
+      expect(issues.security.findings[0].path).toBe("src/config.ts");
+      expect(issues.security.findings[0].detectors).toContain("github_token");
+      expect(JSON.stringify(issues)).not.toContain(FAKE_SECRETS.githubToken);
+    } finally {
+      await dashboard.close();
+      devmemory.close();
+    }
+  });
+
+  it("serves every tab the UI declares", async () => {
+    const app = await harness();
+    try {
+      const html = await (await fetch(app.dashboard.url)).text();
+      for (const tab of ["Overview", "Handoff", "Tasks", "Issues", "Memory", "Code", "Security", "Settings"]) {
+        expect(html).toContain(`"${tab}"`);
+      }
+      // The file view is reachable by clicking, not by a tab.
+      expect(html).toContain("File: function");
+      expect(html).toContain("data-file");
     } finally {
       await app.close();
     }
