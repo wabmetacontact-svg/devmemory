@@ -206,4 +206,38 @@ CREATE TABLE IF NOT EXISTS security_findings (
 CREATE INDEX IF NOT EXISTS idx_security_findings ON security_findings(project_id, file_id);
 `,
   },
+  {
+    version: 6,
+    name: "http_endpoints",
+    sql: `
+-- HTTP endpoints served and called (the network edge imports cannot express).
+-- Roles: 'provides' a route, 'consumes' one, or 'mounts' a router under a prefix.
+CREATE TABLE IF NOT EXISTS http_endpoints (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id      TEXT NOT NULL,
+  file_id         INTEGER NOT NULL REFERENCES files(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL,
+  method          TEXT,
+  raw_path        TEXT NOT NULL,
+  canonical_path  TEXT NOT NULL,
+  line            INTEGER NOT NULL,
+  mounted_name    TEXT,
+  source          TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_http_endpoints_file ON http_endpoints(file_id);
+-- Matching one project's callers to another's routes reads by role and path.
+CREATE INDEX IF NOT EXISTS idx_http_endpoints_lookup ON http_endpoints(project_id, role, canonical_path);
+`,
+  },
+  {
+    version: 7,
+    name: "http_endpoints_external",
+    sql: `
+-- Calls to somebody else's API (a client with an absolute baseURL). They look
+-- identical to calls on our own backend, so without this flag every third-party
+-- request reads as a route the workspace forgot to implement.
+ALTER TABLE http_endpoints ADD COLUMN is_external INTEGER NOT NULL DEFAULT 0;
+`,
+  },
 ];

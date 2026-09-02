@@ -11,3 +11,5 @@ export * from "./symbols/symbol-store.js";
 export * from "./dependencies/import-resolver.js";
 export * from "./dependencies/workspace-packages.js";
 export * from "./search/search-store.js";
+export * from "./http/endpoint-scanner.js";
+export * from "./http/endpoint-store.js";

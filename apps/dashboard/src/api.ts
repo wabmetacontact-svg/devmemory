@@ -29,6 +29,25 @@ export async function handleApi(devmemory: DevMemory, request: ApiRequest): Prom
     if (head === "overview" && request.method === "GET") return overview(devmemory);
     if (head === "settings" && request.method === "GET") return settings(devmemory);
 
+    if (head === "workspaces") {
+      const [name, section] = rest;
+      if (!name) return request.method === "GET" ? workspaces(devmemory) : notFound("unknown route");
+      if (request.method !== "GET") return notFound("unknown route");
+
+      if (section === "api") return ok(devmemory.apiContracts(name));
+      if (section === "context") {
+        const task = request.query.get("task") ?? "";
+        if (!task) return { status: 400, body: { error: { code: "INVALID_INPUT", message: "task is required" } } };
+        return ok(devmemory.workspaceContext(name, { task, maxTokens: Number(request.query.get("tokens") ?? 6000) }));
+      }
+      if (section === "search") {
+        const query = request.query.get("q") ?? "";
+        return ok({ results: query ? devmemory.workspaceSearch(name, query, 30) : [] });
+      }
+      if (!section) return ok(devmemory.workspaceStatus(name));
+      return notFound(`unknown route: /api/workspaces/${name}/${section}`);
+    }
+
     if (head === "projects") {
       const [projectId, section, itemId] = rest;
       if (!projectId) {
@@ -98,6 +117,23 @@ function overview(devmemory: DevMemory): ApiResponse {
 
 function projects(devmemory: DevMemory): ApiResponse {
   return ok({ projects: devmemory.listProjects().map(summary) });
+}
+
+function workspaces(devmemory: DevMemory): ApiResponse {
+  const known = devmemory.listProjects();
+  return ok({
+    workspaces: devmemory.workspaces.list().map((workspace) => ({
+      id: workspace.id,
+      name: workspace.name,
+      description: workspace.description,
+      projects: workspace.members.map((member) => {
+        const project = known.find((candidate) => candidate.projectId === member.projectId);
+        return project
+          ? { role: member.role, ...summary(project) }
+          : { role: member.role, projectId: member.projectId, name: member.projectId };
+      }),
+    })),
+  });
 }
 
 const PROJECT_ROUTES: Record<string, Handler> = {

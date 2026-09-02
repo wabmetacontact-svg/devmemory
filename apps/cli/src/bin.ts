@@ -18,6 +18,7 @@ import type { ProjectRecord } from "@samirthakur024/shared";
 import {
   DevMemory,
   DevMemoryDaemon,
+  callersOf,
   assessOperation,
   clearDaemonRecord,
   isProcessAlive,
@@ -1027,6 +1028,80 @@ program
         process.on("SIGINT", shutdown);
         process.on("SIGTERM", shutdown);
       });
+    } catch (error) {
+      fail(error);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+program
+  .command("api")
+  .argument("[scope]", "workspace or project name (defaults to the current project)")
+  .option("--all", "also list linked routes and routes nobody calls")
+  .option("--path <route>", "show only the callers of one route")
+  .option("--json", "machine readable output")
+  .description("HTTP routes, the code that calls them, and calls that reach nothing")
+  .action(async (scope: string | undefined, options: { all?: boolean; path?: string; json?: boolean }) => {
+    const devmemory = open();
+    try {
+      let target = scope;
+      if (!target) {
+        const project = await devmemory.requireProject({ cwd: process.cwd(), autoConnect: false });
+        target = devmemory.workspaces.forProject(project.projectId)[0]?.name ?? project.name;
+      }
+
+      const report = devmemory.apiContracts(target);
+      if (options.json) {
+        print(JSON.stringify(report, null, 2));
+        return;
+      }
+
+      if (options.path) {
+        const callers = callersOf(report, options.path.replace(/^\/+/, ""));
+        print(`Callers of ${options.path} in ${report.scope}:`);
+        if (callers.length === 0) print("  none found in this scope");
+        for (const caller of callers) print(`  ${caller.project}  ${caller.path}:${caller.line}`);
+        return;
+      }
+
+      print(`API contracts for ${report.scope}`);
+      print(
+        `  ${report.totals.providers} routes, ${report.totals.consumers} calls, ` +
+          `${report.totals.linked} linked, ${report.externalCalls} third-party calls ignored`,
+      );
+
+      print("");
+      if (report.unmatchedCalls.length === 0) {
+        print("  Every call reaches a route.");
+      } else {
+        print(`  Calls with no matching route (${report.unmatchedCalls.length}):`);
+        for (const link of report.unmatchedCalls) {
+          print(`    ${(link.method ?? "ANY").padEnd(6)} /${link.canonical}`);
+          for (const consumer of link.consumers) {
+            print(`           called by ${consumer.project}  ${consumer.path}:${consumer.line}`);
+          }
+        }
+        print("");
+        print("  A route registered dynamically, or served outside this scope, can appear");
+        print("  here without being a defect. Confirm before changing anything.");
+      }
+
+      if (!options.all) return;
+
+      print("");
+      print(`  Linked (${report.linked.length}):`);
+      for (const link of report.linked.slice(0, 40)) {
+        print(`    ${(link.method ?? "ANY").padEnd(6)} /${link.canonical}`);
+        print(`           serves ${link.providers.map((p) => p.project).join(", ")}`);
+        print(`           calls  ${link.consumers.map((c) => `${c.project} ${c.path}:${c.line}`).join(", ")}`);
+      }
+
+      print("");
+      print(`  Routes nobody in scope calls (${report.unusedRoutes.length}):`);
+      for (const link of report.unusedRoutes.slice(0, 40)) {
+        print(`    ${(link.method ?? "ANY").padEnd(6)} /${link.canonical}  (${link.providers[0]?.project ?? "?"})`);
+      }
     } catch (error) {
       fail(error);
     } finally {

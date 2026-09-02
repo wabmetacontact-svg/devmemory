@@ -10,6 +10,7 @@ import { ParserRegistry, defaultParserRegistry } from "../ast/parser-registry.js
 import type { ParseResult } from "../ast/types.js";
 import { SymbolStore } from "../symbols/symbol-store.js";
 import { SearchStore } from "../search/search-store.js";
+import { EndpointStore } from "../http/endpoint-store.js";
 import { findSecrets } from "../security/sensitive.js";
 import { ImportResolver, loadTsconfigAliases } from "../dependencies/import-resolver.js";
 import { discoverWorkspacePackages } from "../dependencies/workspace-packages.js";
@@ -50,6 +51,7 @@ export class FilesystemIndexer {
   private readonly store: FileStore;
   private readonly symbols: SymbolStore;
   private readonly search: SearchStore;
+  private readonly endpoints: EndpointStore;
 
   constructor(
     private readonly db: SqliteDatabase,
@@ -59,6 +61,7 @@ export class FilesystemIndexer {
     this.store = new FileStore(db);
     this.symbols = new SymbolStore(db);
     this.search = new SearchStore(db);
+    this.endpoints = new EndpointStore(db);
   }
 
   get files(): FileStore {
@@ -67,6 +70,10 @@ export class FilesystemIndexer {
 
   get code(): SymbolStore {
     return this.symbols;
+  }
+
+  get httpEndpoints(): EndpointStore {
+    return this.endpoints;
   }
 
   get fullText(): SearchStore {
@@ -133,6 +140,7 @@ export class FilesystemIndexer {
         this.db.exec("DELETE FROM symbols");
         this.db.exec("DELETE FROM imports");
         this.db.exec("DELETE FROM symbol_references");
+        this.db.exec("DELETE FROM http_endpoints");
         this.search.clear();
       }
       const existing = full ? new Map() : this.store.existingByPath(options.projectId);
@@ -200,6 +208,7 @@ export class FilesystemIndexer {
             if (!record) continue;
             this.symbols.clearFile(options.projectId, record.id);
             this.search.removeFile(record.id);
+            this.endpoints.clearFile(record.id);
           }
           stats.deleted = this.store.markDeleted(options.projectId, missing);
         }
@@ -343,6 +352,7 @@ export class FilesystemIndexer {
       this.db.transaction(() => {
         for (const entry of loaded) {
           this.search.indexFile(entry.fileId, entry.relativePath, entry.content);
+          this.endpoints.replaceFile(projectId, entry.fileId, entry.relativePath, entry.content);
           if (this.config.security.scanForSecrets) this.recordSecrets(projectId, entry.fileId, entry.content);
         }
       });

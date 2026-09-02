@@ -17,5 +17,6 @@ export * from "./security/dangerous-operations.js";
 export * from "./daemon/project-watcher.js";
 export * from "./daemon/daemon.js";
 export * from "./recovery/recovery-engine.js";
+export * from "./api/api-contracts.js";
 export * from "./workspace/workspace-registry.js";
 export * from "./workspace/workspace-context.js";

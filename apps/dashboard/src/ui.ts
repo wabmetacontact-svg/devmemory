@@ -113,8 +113,9 @@ export const DASHBOARD_HTML = String.raw`<!doctype html>
 
 <script>
 "use strict";
-var TABS = ["Overview","Handoff","Tasks","Issues","Memory","Code","Changes","Sessions","Search","Analytics","Security","Projects","Settings"];
-var state = { tab: "Overview", projectId: null, projects: [], query: "", file: null, previousTab: "Overview" };
+var TABS = ["Overview","Workspace","Handoff","Tasks","Issues","Memory","Code","Changes","Sessions","Search","Analytics","Security","Projects","Settings"];
+var state = { tab: "Overview", projectId: null, projects: [], query: "", file: null, previousTab: "Overview",
+  workspaces: [], workspace: null, wsQuery: "" };
 
 function el(id) { return document.getElementById(id); }
 function esc(value) {
@@ -165,6 +166,24 @@ function fileLink(path) {
   return '<a href="#" class="filelink" data-file="' + esc(path) + '">' + esc(path) + "</a>";
 }
 
+// In a workspace a path can belong to any member project, so the link carries the
+// project with it - otherwise clicking a backend file while the picker says
+// "mobile" opens the wrong file, or nothing at all.
+function crossFileLink(projectName, path, line) {
+  var project = findProjectByName(projectName);
+  var label = esc(projectName) + " " + esc(path) + (line ? ":" + line : "");
+  if (!project) return '<span class="mono">' + label + "</span>";
+  return '<a href="#" class="filelink mono" data-file="' + esc(path) + '" data-project="' +
+    esc(project.project_id) + '">' + label + "</a>";
+}
+
+function findProjectByName(name) {
+  for (var i = 0; i < state.projects.length; i += 1) {
+    if (state.projects[i].name === name) return state.projects[i];
+  }
+  return null;
+}
+
 // VS Code opens vscode://file/<absolute path>:<line>. The stored path is already
 // forward-slashed, which is what the scheme expects on every platform.
 function editorLink(absolute, line, label) {
@@ -172,16 +191,125 @@ function editorLink(absolute, line, label) {
   return '<a class="badge" href="' + esc(target) + '" title="Open in VS Code">' + esc(label || "VS Code") + "</a>";
 }
 
-function openFile(path) {
+function openFile(path, projectId) {
+  if (projectId && projectId !== state.projectId) {
+    state.projectId = projectId;
+    el("project").value = projectId;
+  }
   if (state.tab !== "File") state.previousTab = state.tab;
   state.file = path;
   state.tab = "File";
   drawTabs();
   load();
 }
+function workspacePath(suffix) { return "/workspaces/" + encodeURIComponent(state.workspace) + (suffix || ""); }
 function projectPath(suffix) { return "/projects/" + state.projectId + (suffix || ""); }
 
 var views = {
+  // The whole point of this view is what no single-project view can show: the
+  // calls one repository makes into another, and the ones that land nowhere.
+  Workspace: function () {
+    if (!state.workspaces.length) {
+      render('<p class="empty">No workspaces yet. Group the repositories of one product with ' +
+        '<span class="mono">devmemory workspace create &lt;name&gt; --projects a,b,c</span>.</p>');
+      return Promise.resolve();
+    }
+
+    return Promise.all([api(workspacePath()), api(workspacePath("/api"))]).then(function (results) {
+      var status = results[0];
+      var contracts = results[1];
+      var picker = state.workspaces.length > 1
+        ? '<div class="row"><label>Workspace</label><select id="wspick">' + state.workspaces.map(function (workspace) {
+            return '<option value="' + esc(workspace.name) + '"' +
+              (workspace.name === state.workspace ? " selected" : "") + ">" + esc(workspace.name) + "</option>";
+          }).join("") + "</select></div>"
+        : "";
+
+      var broken = contracts.unmatchedCalls.map(function (link) {
+        return [
+          '<span class="badge bad">' + esc(link.method || "ANY") + "</span>",
+          '<span class="mono">/' + esc(link.canonical) + "</span>",
+          link.consumers.map(function (site) { return crossFileLink(site.project, site.path, site.line); }).join("<br>")
+        ];
+      });
+
+      var linked = contracts.linked.slice(0, 60).map(function (link) {
+        return [
+          '<span class="badge">' + esc(link.method || "ANY") + "</span>",
+          '<span class="mono">/' + esc(link.canonical) + "</span>",
+          link.providers.map(function (site) { return crossFileLink(site.project, site.path, site.line); }).join("<br>"),
+          link.consumers.map(function (site) { return crossFileLink(site.project, site.path, site.line); }).join("<br>")
+        ];
+      });
+
+      render(picker +
+        '<div class="grid">' +
+        card("Projects", status.projects.length, esc(state.workspace)) +
+        card("Files", status.totals.files) +
+        card("Symbols", status.totals.symbols) +
+        card("HTTP routes", contracts.totals.providers) +
+        card("Calls linked", contracts.totals.linked, contracts.totals.consumers + " calls seen") +
+        card("Calls with no route", contracts.totals.unmatched,
+          contracts.totals.unmatched ? "needs a look" : "all calls reach a route") +
+        "</div>" +
+
+        '<div class="panel"><h2>Calls with no matching route</h2>' +
+        (broken.length
+          ? table(["Method", "Path", "Called by"], broken) +
+            '<p class="muted">A route registered dynamically, or served by a project outside this ' +
+            'workspace, can appear here without being a defect. Confirm before changing anything.</p>'
+          : '<p class="empty">Every call reaches a route.</p>') +
+        "</div>" +
+
+        '<div class="panel"><h2>Projects</h2>' +
+        table(["Project", "Role", "Files", "Symbols", "Memories", "Open tasks", "Branch"],
+          status.projects.map(function (project) {
+            return [esc(project.name), esc(project.role || "-"), esc(project.files), esc(project.symbols),
+              esc(project.memories), esc(project.openTasks), esc(project.branch || "-")];
+          })) + "</div>" +
+
+        '<div class="panel"><h2>Search every project</h2>' +
+        '<div class="row"><input id="wsq" placeholder="symbol, file or phrase" value="' + esc(state.wsQuery) + '">' +
+        '<button id="wsgo">Search</button></div><div id="wsresults"></div></div>' +
+
+        '<div class="panel"><h2>Routes that are called (' + contracts.totals.linked + ')</h2>' +
+        table(["Method", "Path", "Served by", "Called by"], linked) +
+        (contracts.externalCalls
+          ? '<p class="muted">' + contracts.externalCalls + ' third-party calls ignored.</p>'
+          : "") +
+        "</div>");
+
+      var pick = el("wspick");
+      if (pick) {
+        pick.addEventListener("change", function (event) {
+          state.workspace = event.target.value;
+          load();
+        });
+      }
+
+      var run = function () {
+        state.wsQuery = el("wsq").value.trim();
+        if (!state.wsQuery) return;
+        el("wsresults").innerHTML = '<p class="empty">Searching…</p>';
+        api(workspacePath("/search?q=" + encodeURIComponent(state.wsQuery))).then(function (data) {
+          el("wsresults").innerHTML = table(["Score", "Project", "Match"], data.results.map(function (result) {
+            return [
+              result.relevance.toFixed(2),
+              '<span class="badge">' + esc(result.project) + "</span>",
+              result.symbol
+                ? esc(result.symbol.name) + ' <span class="muted">' + esc(result.symbol.type) + "</span><br>" +
+                  crossFileLink(result.project, result.path, result.symbol.lines[0])
+                : crossFileLink(result.project, result.path)
+            ];
+          }));
+        });
+      };
+      el("wsgo").addEventListener("click", run);
+      el("wsq").addEventListener("keydown", function (event) { if (event.key === "Enter") run(); });
+      if (state.wsQuery) run();
+    });
+  },
+
   Overview: function () {
     return api("/overview").then(function (data) {
       render('<div class="grid">' +
@@ -611,7 +739,9 @@ var views = {
   }
 };
 
-function needsProject(tab) { return tab !== "Overview" && tab !== "Projects" && tab !== "Settings"; }
+function needsProject(tab) {
+  return tab !== "Overview" && tab !== "Projects" && tab !== "Settings" && tab !== "Workspace";
+}
 
 function load() {
   if (needsProject(state.tab) && !state.projectId) {
@@ -638,6 +768,12 @@ function boot() {
     el("home").textContent = health.home;
   });
 
+  api("/workspaces").then(function (data) {
+    state.workspaces = data.workspaces;
+    if (data.workspaces.length) state.workspace = data.workspaces[0].name;
+    if (state.tab === "Workspace") load();
+  });
+
   api("/projects").then(function (data) {
     state.projects = data.projects;
     if (data.projects.length) state.projectId = data.projects[0].project_id;
@@ -651,7 +787,7 @@ function boot() {
     var link = event.target.closest ? event.target.closest("[data-file]") : null;
     if (!link) return;
     event.preventDefault();
-    openFile(link.getAttribute("data-file"));
+    openFile(link.getAttribute("data-file"), link.getAttribute("data-project"));
   });
 
   el("project").addEventListener("change", function (event) {

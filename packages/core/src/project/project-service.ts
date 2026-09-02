@@ -11,7 +11,8 @@ import {
 } from "@samirthakur024/shared";
 import type { DevMemoryConfig, IndexRunStats, ProjectDetection, ProjectRecord } from "@samirthakur024/shared";
 import { DatabaseManager, type SqliteDriver } from "@samirthakur024/storage";
-import { FilesystemIndexer, FileStore, SearchStore, SymbolStore, type CodeStats, type FileStats } from "@samirthakur024/indexer";
+import { EndpointStore, FilesystemIndexer, FileStore, SearchStore, SymbolStore, type CodeStats, type FileStats } from "@samirthakur024/indexer";
+import { buildApiContracts, type ApiContractReport, type ProjectEndpoints } from "../api/api-contracts.js";
 import { GitEngine, type GitStatus } from "../git/git-engine.js";
 import { CodeIntelligence } from "../code/code-intelligence.js";
 import { ContextEngine, type ContextRequest } from "../context/context-engine.js";
@@ -194,6 +195,37 @@ export class DevMemory {
 
   filesFor(projectId: string): FileStore {
     return new FileStore(this.databases.openProjectIndex(projectId));
+  }
+
+  /** HTTP routes served and called by a project. */
+  endpointsFor(projectId: string): EndpointStore {
+    return new EndpointStore(this.databases.openProjectIndex(projectId));
+  }
+
+  /**
+   * Which HTTP calls reach which routes. Given a workspace name this spans every
+   * member project, which is the only way the mobile-to-backend edge is visible;
+   * given a project name or id it reports that project alone.
+   */
+  apiContracts(idOrName: string): ApiContractReport {
+    const workspace = this.workspaces.find(idOrName);
+    const projects = workspace
+      ? this.workspaces.projects(workspace.id, this.listProjects())
+      : [this.registry.get(idOrName) ?? this.registry.findByName(idOrName)[0]].filter(
+          (project): project is NonNullable<typeof project> => Boolean(project),
+        );
+
+    if (projects.length === 0) {
+      throw new DevMemoryError("PROJECT_NOT_FOUND", `no workspace or project named ${idOrName}`, { idOrName });
+    }
+
+    const sources: ProjectEndpoints[] = projects.map((project) => ({
+      project: project.name,
+      projectId: project.projectId,
+      endpoints: this.endpointsFor(project.projectId),
+    }));
+
+    return buildApiContracts(workspace?.name ?? (projects[0]?.name ?? idOrName), sources);
   }
 
   /** Symbol, import and reference store for a project (PRD 16, 17). */
