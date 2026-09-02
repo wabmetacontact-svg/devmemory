@@ -40,4 +40,32 @@ CREATE TABLE IF NOT EXISTS project_paths (
 CREATE INDEX IF NOT EXISTS idx_project_paths_path ON project_paths(path);
 `,
   },
+  {
+    version: 2,
+    name: "workspaces",
+    sql: `
+-- A workspace groups projects that are worked on together - a mobile app and the
+-- backend it calls, say. Isolation stays the default: context and search only span
+-- a workspace when the caller asks for one by name (PRD 11 is not weakened).
+CREATE TABLE IF NOT EXISTS workspaces (
+  id           TEXT PRIMARY KEY,
+  name         TEXT NOT NULL,
+  description  TEXT,
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_name ON workspaces(name COLLATE NOCASE);
+
+CREATE TABLE IF NOT EXISTS workspace_projects (
+  workspace_id  TEXT NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
+  project_id    TEXT NOT NULL REFERENCES projects(project_id) ON DELETE CASCADE,
+  role          TEXT,
+  added_at      TEXT NOT NULL,
+  PRIMARY KEY (workspace_id, project_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_workspace_projects ON workspace_projects(project_id);
+`,
+  },
 ];

@@ -48,6 +48,13 @@ const getContext = defineTool({
   permission: "READ",
   inputShape: {
     task: z.string().min(3).describe("What you are about to do, in plain words. e.g. 'fix login validation'."),
+    workspace: z
+      .string()
+      .optional()
+      .describe(
+        "Assemble context across every project in this workspace, not just the current one. " +
+          "Use it when a change spans a backend and the app that calls it. workspace_status lists them.",
+      ),
     paths: z.array(z.string()).max(20).optional().describe("Files you already know are involved."),
     symbols: z.array(z.string()).max(20).optional().describe("Symbols you already know are involved."),
     max_tokens: z.number().int().min(500).max(60_000).optional().describe("Token budget. Default 6000."),
@@ -58,6 +65,38 @@ const getContext = defineTool({
     root: z.string().optional(),
   },
   async handler(input, context) {
+    if (typeof input.workspace === "string") {
+      const across = context.devmemory.workspaceContext(input.workspace, {
+        task: String(input.task),
+        ...(typeof input.max_tokens === "number" ? { maxTokens: input.max_tokens } : {}),
+        ...(typeof input.include_source === "boolean" ? { includeSource: input.include_source } : {}),
+        ...(typeof input.depth === "number" ? { depth: input.depth } : {}),
+      });
+
+      return {
+        workspace: across.workspace,
+        task: across.task,
+        intent: across.intent,
+        projects: across.projects.map((entry) => ({
+          project: entry.name,
+          role: entry.role,
+          files: entry.files.map((file) => ({
+            path: file.path,
+            relevance: file.relevance,
+            why: file.reasons,
+            symbols: file.symbols,
+            ...(file.source ? { source: file.source } : {}),
+          })),
+          memories: entry.memories,
+          token_estimate: entry.tokenEstimate,
+        })),
+        token_estimate: across.tokenEstimate,
+        budget: across.budget,
+        files_selected: across.filesSelected,
+        files_avoided: across.filesAvoided,
+      };
+    }
+
     const project = await resolveTarget(context, input as { project_id?: string; root?: string });
     const result = context.devmemory.contextEngine(project.projectId).getContext({
       task: String(input.task),
@@ -83,10 +122,33 @@ const searchContext = defineTool({
   inputShape: {
     query: z.string().min(2),
     limit: z.number().int().min(1).max(50).optional(),
+    workspace: z.string().optional().describe("Search every project in this workspace instead of just one."),
     project_id: z.string().optional(),
     root: z.string().optional(),
   },
   async handler(input, context) {
+    if (typeof input.workspace === "string") {
+      const across = context.devmemory.workspaceSearch(
+        input.workspace,
+        String(input.query),
+        typeof input.limit === "number" ? input.limit : 20,
+      );
+
+      return {
+        workspace: input.workspace,
+        query: input.query,
+        count: across.length,
+        results: across.map((result) => ({
+          project: result.project,
+          path: result.path,
+          kind: result.kind,
+          relevance: result.relevance,
+          ...(result.symbol ? { symbol: result.symbol } : {}),
+          ...(result.snippet ? { snippet: result.snippet } : {}),
+        })),
+      };
+    }
+
     const project = await resolveTarget(context, input as { project_id?: string; root?: string });
     const results = context.devmemory
       .contextEngine(project.projectId)

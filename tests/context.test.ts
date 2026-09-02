@@ -343,3 +343,53 @@ describe("context assembly (PRD 22, 23, 24)", () => {
     }
   });
 });
+
+describe("retrieval quality regressions", () => {
+  it("ignores Hinglish filler so a mixed-language request finds the same code", () => {
+    const english = parseRequest("add a new field to the template type");
+    const hinglish = parseRequest("template me ek naya field add karna hai");
+
+    expect(hinglish.terms).toContain("template");
+    for (const filler of ["me", "ek", "naya", "karna", "hai"]) {
+      expect(hinglish.terms).not.toContain(filler);
+    }
+    // "naya" is filler where "new" is a word, so the lists are not identical - but
+    // the terms that actually steer retrieval have to survive both phrasings.
+    expect(hinglish.terms).toEqual(expect.arrayContaining(["template", "field"]));
+    expect(english.terms).toEqual(expect.arrayContaining(["template", "field"]));
+    expect(hinglish.intent).toBe(english.intent);
+    expect(toMatchQuery("template me ek naya field add karna hai")).not.toMatch(/"karna"|"hai"/);
+  });
+
+  it("ranks a file whose name carries a query word above generic content matches", async () => {
+    const root = makeProject({
+      name: "ranking",
+      files: {
+        "package.json": JSON.stringify({ name: "ranking" }),
+        "src/types/template.ts": "export interface Template {\n  id: string;\n}\n",
+        // Mentions every generic word in the request, but nothing about templates.
+        "src/pages/Login.tsx":
+          "export function Login() {\n" +
+          "  // add a new field, add another field, this type of field\n" +
+          "  const field = 1;\n  const add = 2;\n  const type = 3;\n  return field + add + type;\n}\n",
+      },
+    });
+
+    const devmemory = makeDevMemory();
+    try {
+      const project = (await devmemory.connect({ explicitRoot: root })).project;
+      const result = devmemory.contextEngine(project.projectId).getContext({
+        task: "add a new field to the template type",
+      });
+
+      const paths = result.files.map((file) => file.path);
+      expect(paths).toContain("src/types/template.ts");
+      // The word that narrowed the search has to win, or the answer is noise.
+      expect(paths.indexOf("src/types/template.ts")).toBeLessThan(
+        paths.includes("src/pages/Login.tsx") ? paths.indexOf("src/pages/Login.tsx") : Number.MAX_SAFE_INTEGER,
+      );
+    } finally {
+      devmemory.close();
+    }
+  });
+});

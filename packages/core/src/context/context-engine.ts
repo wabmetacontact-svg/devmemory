@@ -101,7 +101,7 @@ const WEIGHTS: Record<ScoreComponent, number> = {
   explicit: 1.0,
   symbol: 0.9,
   search: 0.7,
-  pathMatch: 0.5,
+  pathMatch: 0.85,
   dependency: 0.4,
   recent: 0.3,
   test: 0.25,
@@ -290,6 +290,20 @@ export class ContextEngine {
       for (const file of this.deps.files.searchPaths(projectId, pathToken, 5)) {
         this.add(candidates, file.relativePath, file.language, "pathMatch", 1, `path mentions ${pathToken}`);
       }
+    }
+
+    // A plain word that names a file is the strongest signal short of naming the
+    // path outright: "a new field on the template" should reach template.ts, and
+    // content search alone will not take it there - common words like "field" and
+    // "add" appear in far more files than the one word that mattered. searchPaths
+    // returns shortest paths first, so the type definition outranks the screen
+    // that happens to render it.
+    for (const term of parsed.terms) {
+      if (term.length < 4) continue;
+      const matches = this.deps.files.searchPaths(projectId, term, 6);
+      matches.forEach((file, position) => {
+        this.add(candidates, file.relativePath, file.language, "pathMatch", 1 - position * 0.08, `filename contains "${term}"`);
+      });
     }
 
     const recentChanges = this.recentlyChanged();

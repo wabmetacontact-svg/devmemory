@@ -32,6 +32,9 @@ const STOPWORDS = new Set([
   "that", "the", "their", "then", "there", "these", "they", "this", "to", "up", "us", "use", "want",
   "was", "we", "were", "what", "when", "where", "which", "while", "who", "why", "will", "with",
   "would", "you", "your",
+  // Hinglish filler, so a request written the way people actually type it does not
+  // spend its search budget on "karna" and "hai".
+  "aur", "ya", "hai", "hain", "tha", "the", "thi", "ho", "hona", "hoga", "karna", "karne", "karo", "kar", "kiya", "karta", "karte", "karti", "ek", "naya", "nayi", "naye", "me", "mein", "ka", "ki", "ke", "ko", "se", "par", "pe", "kya", "kaise", "kyun", "kyu", "chahiye", "wala", "wali", "wale", "do", "dena", "diya", "liye", "sakta", "sakte", "raha", "rahi", "rahe", "abhi", "phir", "bhi", "koi", "kuch", "sab", "bas", "toh", "to", "fir", "jo", "jab", "tab", "yaha", "waha", "yeh", "ye", "wo", "woh", "apna", "apne", "mera", "mere", "meri", "hamara", "tum", "aap",
 ]);
 
 const PATH_LIKE = /[\w.@-]*[\\/][\w./\\@-]+|\b[\w.-]+\.(ts|tsx|js|jsx|mjs|cjs|py|go|rs|java|rb|php|cs|json|yaml|yml|md|sql)\b/gi;

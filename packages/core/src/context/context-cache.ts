@@ -54,6 +54,14 @@ const MAX_ENTRIES_PER_PROJECT = 200;
  * kept honest by the content hashes of the files it contains: if nothing those
  * files depend on has moved, the answer is still true and costs nothing to return.
  */
+/**
+ * Bumped whenever retrieval or ranking changes. It is part of every cache key, so
+ * an upgraded DevMemory stops answering from entries its old algorithm produced -
+ * without this, improving the ranking silently changes nothing for anyone who has
+ * asked the question before.
+ */
+export const RANKING_VERSION = 2;
+
 export class ContextCache {
   constructor(
     private readonly projectId: string,
@@ -68,7 +76,7 @@ export class ContextCache {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([name, value]) => `${name}=${JSON.stringify(value)}`)
       .join("&");
-    return sha256(`${normalisedTask}|${normalisedOptions}`).slice(0, 32);
+    return sha256(`${RANKING_VERSION}|${normalisedTask}|${normalisedOptions}`).slice(0, 32);
   }
 
   lookup(key: string): CacheValidation | null {

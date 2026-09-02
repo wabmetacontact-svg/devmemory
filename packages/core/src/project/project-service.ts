@@ -14,10 +14,19 @@ import { DatabaseManager, type SqliteDriver } from "@samirthakur024/storage";
 import { FilesystemIndexer, FileStore, SearchStore, SymbolStore, type CodeStats, type FileStats } from "@samirthakur024/indexer";
 import { GitEngine, type GitStatus } from "../git/git-engine.js";
 import { CodeIntelligence } from "../code/code-intelligence.js";
-import { ContextEngine } from "../context/context-engine.js";
+import { ContextEngine, type ContextRequest } from "../context/context-engine.js";
 import { ContextCache, type ContextAnalytics } from "../context/context-cache.js";
 import { PermissionEngine } from "../security/permissions.js";
 import { RecoveryEngine } from "../recovery/recovery-engine.js";
+import { WorkspaceRegistry } from "../workspace/workspace-registry.js";
+import {
+  budgetPerProject,
+  mergeWorkspaceContext,
+  mergeWorkspaceSearch,
+  type WorkspaceContextResult,
+  type WorkspaceSearchResult,
+  type WorkspaceStatus,
+} from "../workspace/workspace-context.js";
 import { MemoryEngine } from "../memory/memory-engine.js";
 import { MemoryStore, type MemoryStats } from "../memory/memory-store.js";
 import { TaskEngine } from "../tasks/task-engine.js";
@@ -109,6 +118,7 @@ export class DevMemory {
   readonly git: GitEngine;
   /** Operation policy for every surface that calls in (PRD 38). */
   readonly permissions: PermissionEngine;
+  private workspaceRegistry: WorkspaceRegistry | undefined;
 
   constructor(options: DevMemoryOptions = {}) {
     this.home = options.home ?? resolveHome();
@@ -241,6 +251,83 @@ export class DevMemory {
   private branchOf(project: ProjectRecord): string | null {
     if (!this.config.git.enabled || project.repositoryType !== "git" || !this.git.isAvailable()) return null;
     return this.git.currentBranch(project.rootPath);
+  }
+
+  /** Groups of projects worked on together (mobile + the backend it calls). */
+  get workspaces(): WorkspaceRegistry {
+    this.workspaceRegistry ??= new WorkspaceRegistry(this.databases);
+    return this.workspaceRegistry;
+  }
+
+  /**
+   * Context assembled across every project in a workspace. The budget is divided
+   * between them, so the project the developer was not thinking about still gets
+   * to answer (PRD 11 holds: nothing spans projects unless a workspace names them).
+   */
+  workspaceContext(idOrName: string, request: ContextRequest): WorkspaceContextResult {
+    const workspace = this.workspaces.require(idOrName);
+    const members = this.workspaces.projects(workspace.id, this.listProjects());
+    const budget = request.maxTokens ?? 6000;
+    const share = budgetPerProject(budget, members.length);
+
+    const parts = members.map((project) => {
+      const role = workspace.members.find((member) => member.projectId === project.projectId)?.role ?? null;
+      const result = this.contextEngine(project.projectId).getContext({ ...request, maxTokens: share });
+      return {
+        project,
+        role,
+        intent: result.intent,
+        files: result.files,
+        memories: result.memories,
+        tokenEstimate: result.tokenEstimate,
+        filesAvoided: result.filesAvoided,
+      };
+    });
+
+    return mergeWorkspaceContext(workspace.name, request.task, budget, parts);
+  }
+
+  /** Ranked search across every project in a workspace. */
+  workspaceSearch(idOrName: string, query: string, limit = 20): WorkspaceSearchResult[] {
+    const workspace = this.workspaces.require(idOrName);
+    const members = this.workspaces.projects(workspace.id, this.listProjects());
+
+    const parts = members.map((project) => ({
+      project,
+      results: this.contextEngine(project.projectId).searchContext(query, limit),
+    }));
+
+    return mergeWorkspaceSearch(parts, limit);
+  }
+
+  workspaceStatus(idOrName: string): WorkspaceStatus {
+    const workspace = this.workspaces.require(idOrName);
+    const members = this.workspaces.projects(workspace.id, this.listProjects());
+
+    const projects = members.map((project) => {
+      const status = this.status(project.projectId);
+      return {
+        projectId: project.projectId,
+        name: project.name,
+        role: workspace.members.find((member) => member.projectId === project.projectId)?.role ?? null,
+        files: status.files.files,
+        symbols: status.code.symbols,
+        memories: status.memory.active,
+        openTasks: status.tasks.open,
+        branch: status.git?.branch ?? null,
+      };
+    });
+
+    return {
+      workspace: workspace.name,
+      projects,
+      totals: {
+        files: projects.reduce((sum, entry) => sum + entry.files, 0),
+        symbols: projects.reduce((sum, entry) => sum + entry.symbols, 0),
+        memories: projects.reduce((sum, entry) => sum + entry.memories, 0),
+        openTasks: projects.reduce((sum, entry) => sum + entry.openTasks, 0),
+      },
+    };
   }
 
   /** Health checks and self-repair for this installation (PRD 60, 64). */

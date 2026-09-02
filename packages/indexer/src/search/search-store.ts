@@ -27,6 +27,9 @@ const STOPWORDS = new Set([
   "how", "i", "if", "in", "into", "is", "it", "its", "me", "my", "need", "of", "on", "or", "our",
   "please", "so", "than", "that", "the", "then", "there", "these", "they", "this", "to", "up", "use",
   "want", "was", "we", "what", "when", "where", "which", "who", "why", "will", "with", "you", "your",
+  // Hinglish carries its own filler. Without these, "template me ek naya field add
+  // karna hai" searches for "karna" and "hai" as hard as it searches for "template".
+  "aur", "ya", "hai", "hain", "tha", "the", "thi", "ho", "hona", "hoga", "karna", "karne", "karo", "kar", "kiya", "karta", "karte", "karti", "ek", "naya", "nayi", "naye", "me", "mein", "ka", "ki", "ke", "ko", "se", "par", "pe", "kya", "kaise", "kyun", "kyu", "chahiye", "wala", "wali", "wale", "do", "dena", "diya", "liye", "sakta", "sakte", "raha", "rahi", "rahe", "abhi", "phir", "bhi", "koi", "kuch", "sab", "bas", "toh", "to", "fir", "jo", "jab", "tab", "yaha", "waha", "yeh", "ye", "wo", "woh", "apna", "apne", "mera", "mere", "meri", "hamara", "tum", "aap",
 ]);
 
 const IDENTIFIER = /[A-Za-z_$][A-Za-z0-9_$]{1,}/g;

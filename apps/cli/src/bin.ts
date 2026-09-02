@@ -425,11 +425,39 @@ program
   .option("--tokens <n>", "token budget", "6000")
   .option("--depth <n>", "dependency graph expansion depth", "1")
   .option("--source", "include source slices, not just structure")
+  .option("--workspace <name>", "assemble across every project in this workspace")
   .option("--json", "machine readable output")
   .description("Assemble the smallest useful context for a task")
-  .action(async (taskParts: string[], options: { tokens: string; depth: string; source?: boolean; json?: boolean }) => {
+  .action(async (taskParts: string[], options: { tokens: string; depth: string; source?: boolean; workspace?: string; json?: boolean }) => {
     const devmemory = open();
     try {
+      if (options.workspace) {
+        const across = devmemory.workspaceContext(options.workspace, {
+          task: taskParts.join(" "),
+          maxTokens: Number(options.tokens),
+          depth: Number(options.depth),
+          includeSource: options.source === true,
+        });
+
+        if (options.json) {
+          print(JSON.stringify(across, null, 2));
+          return;
+        }
+
+        print(`Context for: ${across.task}`);
+        print(`  workspace   ${across.workspace}  (${across.projects.length} projects)`);
+        print(`  tokens      ~${across.tokenEstimate} of ${across.budget} budget`);
+        print(`  files       ${across.filesSelected} selected, ${across.filesAvoided} avoided`);
+        for (const entry of across.projects) {
+          print("");
+          print(`  ${entry.name}${entry.role ? " (" + entry.role + ")" : ""}  -  ${entry.filesSelected} files, ~${entry.tokenEstimate} tokens`);
+          for (const file of entry.files.slice(0, 6)) {
+            print(`    ${file.relevance.toFixed(2)}  ${file.path}`);
+          }
+        }
+        return;
+      }
+
       const project = await devmemory.requireProject({ cwd: process.cwd(), autoConnect: false });
       const result = devmemory.contextEngine(project.projectId).getContext({
         task: taskParts.join(" "),
@@ -475,11 +503,27 @@ program
   .command("search")
   .argument("<query...>", "what to look for")
   .option("--limit <n>", "maximum results", "15")
+  .option("--workspace <name>", "search every project in this workspace")
   .option("--json", "machine readable output")
   .description("Search the project's code and symbols")
-  .action(async (queryParts: string[], options: { limit: string; json?: boolean }) => {
+  .action(async (queryParts: string[], options: { limit: string; workspace?: string; json?: boolean }) => {
     const devmemory = open();
     try {
+      if (options.workspace) {
+        const across = devmemory.workspaceSearch(options.workspace, queryParts.join(" "), Number(options.limit));
+        if (options.json) {
+          print(JSON.stringify(across, null, 2));
+          return;
+        }
+        for (const result of across) {
+          const label = result.symbol ? `${result.symbol.name} (${result.symbol.type})` : result.path;
+          print(`  ${result.relevance.toFixed(2)}  [${result.project}]  ${label}`);
+          print(`        ${result.path}${result.symbol ? ":" + result.symbol.lines[0] : ""}`);
+        }
+        if (across.length === 0) print("No matches.");
+        return;
+      }
+
       const project = await devmemory.requireProject({ cwd: process.cwd(), autoConnect: false });
       const results = devmemory
         .contextEngine(project.projectId)
@@ -983,6 +1027,143 @@ program
         process.on("SIGINT", shutdown);
         process.on("SIGTERM", shutdown);
       });
+    } catch (error) {
+      fail(error);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+const workspaceCommand = program.command("workspace").description("Groups of projects worked on together");
+
+workspaceCommand
+  .command("create")
+  .argument("<name>", "workspace name")
+  .option("--projects <names>", "comma separated project names or ids")
+  .option("--description <text>", "what this workspace is")
+  .description("Create a workspace")
+  .action((name: string, options: { projects?: string; description?: string }) => {
+    const devmemory = open();
+    try {
+      const wanted = options.projects ? splitList(options.projects) : [];
+      const projectIds = wanted.map((entry) => {
+        const byId = devmemory.registry.get(entry);
+        if (byId) return byId.projectId;
+        const byName = devmemory.registry.findByName(entry)[0];
+        if (!byName) fail(new Error(`unknown project: ${entry}`));
+        return (byName as ProjectRecord).projectId;
+      });
+
+      const workspace = devmemory.workspaces.create(name, {
+        ...(options.description ? { description: options.description } : {}),
+        projectIds,
+      });
+
+      print(`Workspace ${workspace.name} created with ${workspace.members.length} project(s).`);
+      for (const member of workspace.members) {
+        print(`  ${devmemory.registry.get(member.projectId)?.name ?? member.projectId}`);
+      }
+    } catch (error) {
+      fail(error);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+workspaceCommand
+  .command("list")
+  .description("List workspaces")
+  .action(() => {
+    const devmemory = open();
+    try {
+      const workspaces = devmemory.workspaces.list();
+      if (workspaces.length === 0) {
+        print("No workspaces yet. Create one with 'devmemory workspace create <name> --projects a,b'.");
+        return;
+      }
+      for (const workspace of workspaces) {
+        const names = workspace.members
+          .map((member) => devmemory.registry.get(member.projectId)?.name ?? member.projectId)
+          .join(", ");
+        print(`  ${workspace.name.padEnd(16)} ${names}`);
+        if (workspace.description) print(`      ${workspace.description}`);
+      }
+    } catch (error) {
+      fail(error);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+workspaceCommand
+  .command("add")
+  .argument("<workspace>", "workspace name")
+  .argument("<project>", "project name or id")
+  .option("--role <role>", "label such as backend, mobile or web")
+  .description("Add a project to a workspace")
+  .action((workspaceName: string, projectName: string, options: { role?: string }) => {
+    const devmemory = open();
+    try {
+      const project = devmemory.registry.get(projectName) ?? devmemory.registry.findByName(projectName)[0];
+      if (!project) fail(new Error(`unknown project: ${projectName}`));
+      const workspace = devmemory.workspaces.addProject(
+        workspaceName,
+        (project as ProjectRecord).projectId,
+        options.role,
+      );
+      print(`${workspace.name}: ${workspace.members.length} project(s).`);
+    } catch (error) {
+      fail(error);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+workspaceCommand
+  .command("remove")
+  .argument("<workspace>", "workspace name")
+  .argument("<project>", "project name or id")
+  .description("Remove a project from a workspace")
+  .action((workspaceName: string, projectName: string) => {
+    const devmemory = open();
+    try {
+      const project = devmemory.registry.get(projectName) ?? devmemory.registry.findByName(projectName)[0];
+      if (!project) fail(new Error(`unknown project: ${projectName}`));
+      const workspace = devmemory.workspaces.removeProject(workspaceName, (project as ProjectRecord).projectId);
+      print(`${workspace.name}: ${workspace.members.length} project(s).`);
+    } catch (error) {
+      fail(error);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+workspaceCommand
+  .command("status")
+  .argument("<workspace>", "workspace name")
+  .option("--json", "machine readable output")
+  .description("Totals for every project in a workspace")
+  .action((workspaceName: string, options: { json?: boolean }) => {
+    const devmemory = open();
+    try {
+      const status = devmemory.workspaceStatus(workspaceName);
+      if (options.json) {
+        print(JSON.stringify(status, null, 2));
+        return;
+      }
+
+      print(`${status.workspace}`);
+      print("  project              role      files  symbols  memories  tasks  branch");
+      for (const project of status.projects) {
+        print(
+          "  " + project.name.padEnd(20) + (project.role ?? "-").padEnd(10) +
+          String(project.files).padStart(5) + String(project.symbols).padStart(9) +
+          String(project.memories).padStart(10) + String(project.openTasks).padStart(7) +
+          "  " + (project.branch ?? "-"),
+        );
+      }
+      print("");
+      print(`  total: ${status.totals.files} files, ${status.totals.symbols} symbols, ${status.totals.memories} memories`);
     } catch (error) {
       fail(error);
     } finally {
