@@ -1036,6 +1036,58 @@ program
   });
 
 program
+  .command("impact")
+  .argument("<path>", "project-relative file path")
+  .option("--depth <n>", "how far to follow the dependency graph", "3")
+  .option("--json", "machine readable output")
+  .description("What could break if this file changes, through imports and over HTTP")
+  .action(async (target: string, options: { depth: string; json?: boolean }) => {
+    const devmemory = open();
+    try {
+      const project = await devmemory.requireProject({ cwd: process.cwd(), autoConnect: false });
+      const impact = devmemory.impact(project.projectId, target, { depth: Number(options.depth) });
+
+      if (options.json) {
+        print(JSON.stringify(impact, null, 2));
+        return;
+      }
+
+      print(`Impact of ${impact.path}`);
+      print(`  exports    ${impact.exportedSymbols.map((symbol) => symbol.name).join(", ") || "-"}`);
+      print(`  imported by ${impact.direct.length} direct, ${impact.transitive.length} transitive`);
+      for (const dependent of impact.direct.slice(0, 10)) print(`    ${dependent}`);
+      print(`  tests      ${impact.tests.length}`);
+      for (const test of impact.tests.slice(0, 5)) print(`    ${test}`);
+
+      if (impact.http.routesServed.length > 0) {
+        print("");
+        print(`  Routes this file serves, and who calls them (${impact.httpScope}):`);
+        for (const route of impact.http.routesServed) {
+          print(`    ${route.method ?? "ANY"} ${route.path}`);
+          for (const caller of route.calledBy) print(`        ${caller.project}  ${caller.path}:${caller.line}`);
+        }
+        print("");
+        print("  Nothing imports across a network boundary: renaming one of these paths");
+        print("  breaks those callers without a single compile error.");
+      }
+
+      const called = impact.http.routesCalled;
+      if (called.length > 0) {
+        print("");
+        print("  Routes this file calls:");
+        for (const route of called) {
+          const served = route.servedBy.map((site) => `${site.project} ${site.path}:${site.line}`).join(", ");
+          print(`    ${route.method ?? "ANY"} ${route.path}  ${route.unmatched ? "<- NO ROUTE FOUND" : "-> " + served}`);
+        }
+      }
+    } catch (error) {
+      fail(error);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+program
   .command("api")
   .argument("[scope]", "workspace or project name (defaults to the current project)")
   .option("--all", "also list linked routes and routes nobody calls")

@@ -1,6 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { canonicalPath, scanEndpoints } from "@samirthakur024/indexer";
-import { cleanupAll, makeDevMemory, makeProject } from "./helpers.js";
+import { cleanupAll, makeDevMemory, makeProject, writeFile } from "./helpers.js";
 
 afterAll(cleanupAll);
 
@@ -122,6 +122,53 @@ describe("api contracts across projects", () => {
     }
   });
 
+  it("adds HTTP callers to impact analysis, which imports cannot reach", async () => {
+    const backend = makeProject({ name: "backend3", remote: "git@github.com:acme/b3.git", files: backendFiles("backend3") });
+    const client = makeProject({ name: "client3", remote: "git@github.com:acme/c3.git", files: clientFiles("client3") });
+
+    const devmemory = makeDevMemory();
+    try {
+      const a = (await devmemory.connect({ explicitRoot: backend })).project;
+      const b = (await devmemory.connect({ explicitRoot: client })).project;
+      devmemory.workspaces.create("product", { projectIds: [a.projectId, b.projectId] });
+
+      const impact = devmemory.impact(a.projectId, "src/inbox.routes.ts");
+
+      // Imports alone say this file is used by exactly one file, in its own project.
+      expect(impact.direct).toEqual(["src/app.ts"]);
+
+      // Over HTTP it is used by another repository entirely.
+      const served = impact.http.routesServed.map((route) => route.path);
+      expect(served).toContain("/inbox/conversations");
+      const callers = impact.http.routesServed.flatMap((route) => route.calledBy);
+      expect(callers.some((site) => site.project === "client3")).toBe(true);
+      expect(impact.httpScope).toBe("product");
+
+      // The client side sees the reverse: which project serves what it calls.
+      const clientImpact = devmemory.impact(b.projectId, "src/api.ts");
+      const called = clientImpact.http.routesCalled;
+      expect(called.find((route) => route.path === "/inbox/conversations")?.servedBy[0]?.project).toBe("backend3");
+      expect(called.find((route) => route.path === "/inbox/conversations/{}/star")?.unmatched).toBe(true);
+    } finally {
+      devmemory.close();
+    }
+  });
+
+  it("still answers for a project that belongs to no workspace", async () => {
+    const backend = makeProject({ name: "lonely", remote: "git@github.com:acme/lonely.git", files: backendFiles("lonely") });
+    const devmemory = makeDevMemory();
+    try {
+      const project = (await devmemory.connect({ explicitRoot: backend })).project;
+      const impact = devmemory.impact(project.projectId, "src/inbox.routes.ts");
+      expect(impact.direct).toEqual(["src/app.ts"]);
+      // Its own routes have no callers here, and that is not an error.
+      expect(impact.http.routesServed).toEqual([]);
+      expect(impact.httpScope).toBe("lonely");
+    } finally {
+      devmemory.close();
+    }
+  });
+
   it("names the call sites a route change would break", async () => {
     const backend = makeProject({ name: "backend2", remote: "git@github.com:acme/b2.git", files: backendFiles("backend2") });
     const client = makeProject({ name: "client2", remote: "git@github.com:acme/c2.git", files: clientFiles("client2") });
@@ -137,6 +184,37 @@ describe("api contracts across projects", () => {
       expect(callers).toHaveLength(1);
       expect(callers[0]?.project).toBe("client2");
       expect(callers[0]?.path).toBe("src/api.ts");
+    } finally {
+      devmemory.close();
+    }
+  });
+});
+
+describe("endpoints stay current", () => {
+  it("updates on a single-file re-index, which is what the daemon runs", async () => {
+    const root = makeProject({
+      name: "live",
+      remote: "git@github.com:acme/live.git",
+      files: {
+        "package.json": JSON.stringify({ name: "live", dependencies: { express: "4.18.0" } }),
+        "src/app.ts": `import routes from "./routes";\napp.use("/api/things", routes);\n`,
+        "src/routes.ts": `router.get("/list", handler);\n`,
+      },
+    });
+
+    const devmemory = makeDevMemory();
+    try {
+      const project = (await devmemory.connect({ explicitRoot: root })).project;
+      const paths = (): string[] =>
+        devmemory.endpointsFor(project.projectId).provides(project.projectId).map((route) => route.canonical);
+
+      expect(paths()).toEqual(["things/list"]);
+
+      // Rename the route, then index only that file - the daemon's exact path.
+      writeFile(root, "src/routes.ts", `router.get("/items", handler);\n`);
+      await devmemory.index(project.projectId, { only: ["src/routes.ts"] });
+
+      expect(paths()).toEqual(["things/items"]);
     } finally {
       devmemory.close();
     }

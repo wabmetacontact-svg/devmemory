@@ -162,7 +162,9 @@ const impactAnalysis = defineTool({
   title: "Impact analysis",
   description:
     "What could break if this file changes: its exported symbols, the files that import it directly, " +
-    "the transitive blast radius, and the tests that cover it.",
+    "the transitive blast radius, the tests that cover it, and - when the project belongs to a " +
+    "workspace - the code in other repositories that calls its HTTP routes. Nothing imports across a " +
+    "network boundary, so http_callers is the part no dependency graph can tell you.",
   permission: "READ",
   inputShape: {
     path: z.string().min(1),
@@ -172,9 +174,19 @@ const impactAnalysis = defineTool({
   },
   async handler(input, context) {
     const project = await resolveTarget(context, input as { project_id?: string; root?: string });
-    const impact = context.devmemory.codeIntelligence(project.projectId).impact(String(input.path), {
+    const impact = context.devmemory.impact(project.projectId, String(input.path), {
       ...(typeof input.depth === "number" ? { depth: input.depth } : {}),
     });
+
+    const httpCallers = impact.http.routesServed.map((route) => ({
+      route: `${route.method ?? "ANY"} ${route.path}`,
+      called_by: route.calledBy.map((site) => `${site.project} ${site.path}:${site.line}`),
+    }));
+    const httpDependencies = impact.http.routesCalled.map((route) => ({
+      route: `${route.method ?? "ANY"} ${route.path}`,
+      served_by: route.servedBy.map((site) => `${site.project} ${site.path}:${site.line}`),
+      ...(route.unmatched ? { warning: "no route in scope serves this call" } : {}),
+    }));
 
     return {
       project_id: project.projectId,
@@ -186,6 +198,17 @@ const impactAnalysis = defineTool({
       total_affected: impact.direct.length + impact.transitive.length,
       depth: impact.depth,
       truncated: impact.truncated,
+      http_scope: impact.httpScope,
+      // Callers reached over HTTP, which no import edge connects to this file.
+      http_callers: httpCallers,
+      http_dependencies: httpDependencies,
+      ...(httpCallers.length > 0
+        ? {
+            warning:
+              `This file serves ${httpCallers.length} route(s) called from other code. ` +
+              "Changing a path, method or response shape breaks those callers with no compile error.",
+          }
+        : {}),
     };
   },
 });

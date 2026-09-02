@@ -123,6 +123,48 @@ export function buildApiContracts(scope: string, sources: ProjectEndpoints[]): A
   };
 }
 
+export interface HttpImpact {
+  /** Routes this file serves, and the code elsewhere that calls them. */
+  routesServed: Array<{ method: string | null; path: string; calledBy: EndpointSite[] }>;
+  /** Routes this file calls, and where they are served. */
+  routesCalled: Array<{ method: string | null; path: string; servedBy: EndpointSite[]; unmatched: boolean }>;
+}
+
+/**
+ * The network edge for one file, in both directions.
+ *
+ * Editing a route handler, the question is who calls it; editing a screen, the
+ * question is which handler it depends on. Neither is answerable from imports,
+ * and both are the difference between a safe change and a runtime break the
+ * type checker was never going to catch.
+ */
+export function httpImpact(report: ApiContractReport, project: string, path: string): HttpImpact {
+  const isThisFile = (site: EndpointSite): boolean => site.project === project && site.path === path;
+
+  const routesServed = report.linked
+    .concat(report.unusedRoutes)
+    .filter((link) => link.providers.some(isThisFile))
+    .map((link) => ({
+      method: link.method,
+      path: `/${link.canonical}`,
+      // A caller inside the same file is not an impact worth reporting.
+      calledBy: link.consumers.filter((site) => !isThisFile(site)),
+    }))
+    .filter((entry) => entry.calledBy.length > 0);
+
+  const routesCalled = report.linked
+    .concat(report.unmatchedCalls)
+    .filter((link) => link.consumers.some(isThisFile))
+    .map((link) => ({
+      method: link.method,
+      path: `/${link.canonical}`,
+      servedBy: link.providers.filter((site) => !isThisFile(site)),
+      unmatched: link.providers.length === 0,
+    }));
+
+  return { routesServed, routesCalled };
+}
+
 /**
  * The callers a route change would break, for one path.
  *

@@ -12,9 +12,9 @@ import {
 import type { DevMemoryConfig, IndexRunStats, ProjectDetection, ProjectRecord } from "@samirthakur024/shared";
 import { DatabaseManager, type SqliteDriver } from "@samirthakur024/storage";
 import { EndpointStore, FilesystemIndexer, FileStore, SearchStore, SymbolStore, type CodeStats, type FileStats } from "@samirthakur024/indexer";
-import { buildApiContracts, type ApiContractReport, type ProjectEndpoints } from "../api/api-contracts.js";
+import { buildApiContracts, httpImpact, type ApiContractReport, type HttpImpact, type ProjectEndpoints } from "../api/api-contracts.js";
 import { GitEngine, type GitStatus } from "../git/git-engine.js";
-import { CodeIntelligence } from "../code/code-intelligence.js";
+import { CodeIntelligence, type ImpactResult } from "../code/code-intelligence.js";
 import { ContextEngine, type ContextRequest } from "../context/context-engine.js";
 import { ContextCache, type ContextAnalytics } from "../context/context-cache.js";
 import { PermissionEngine } from "../security/permissions.js";
@@ -200,6 +200,34 @@ export class DevMemory {
   /** HTTP routes served and called by a project. */
   endpointsFor(projectId: string): EndpointStore {
     return new EndpointStore(this.databases.openProjectIndex(projectId));
+  }
+
+  /**
+   * What could break if a file changes - through imports and over HTTP.
+   *
+   * The import graph stops at the project boundary, so on its own it reports a
+   * route handler as safe to rename while screens in two other repositories call
+   * it. When the project belongs to a workspace the network edge is added here,
+   * which is the only place that knows about both.
+   */
+  impact(projectId: string, relativePath: string, options: { depth?: number; limit?: number } = {}): ImpactResult & {
+    http: HttpImpact;
+    httpScope: string | null;
+  } {
+    const base = this.codeIntelligence(projectId).impact(relativePath, options);
+    const project = this.registry.get(projectId);
+    const workspace = project ? this.workspaces.forProject(projectId)[0] : undefined;
+    const scope = workspace?.name ?? project?.name ?? null;
+
+    if (!scope) return { ...base, http: { routesServed: [], routesCalled: [] }, httpScope: null };
+
+    try {
+      const report = this.apiContracts(scope);
+      return { ...base, http: httpImpact(report, project?.name ?? "", relativePath), httpScope: scope };
+    } catch {
+      // A project with no endpoint data still has a perfectly good import answer.
+      return { ...base, http: { routesServed: [], routesCalled: [] }, httpScope: null };
+    }
   }
 
   /**
