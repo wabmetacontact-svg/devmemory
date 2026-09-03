@@ -96,6 +96,10 @@ export const DASHBOARD_HTML = String.raw`<!doctype html>
     letter-spacing: .6px; color: var(--muted); font-weight: 600; }
   .headline .value { font-size: 16px; }
   ul.plain { margin: 0; padding-left: 18px; }
+  .feedrow { display: flex; gap: 10px; align-items: baseline; padding: 5px 0;
+    border-bottom: 1px solid var(--border); }
+  .feedrow:last-child { border-bottom: none; }
+  .feedtext { flex: 1; min-width: 0; overflow-wrap: anywhere; }
   ul.plain li { margin: 2px 0; }
   pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-family: var(--mono); font-size: 12.5px; }
 </style>
@@ -113,9 +117,10 @@ export const DASHBOARD_HTML = String.raw`<!doctype html>
 
 <script>
 "use strict";
-var TABS = ["Overview","Workspace","Handoff","Tasks","Issues","Memory","Code","Changes","Sessions","Search","Analytics","Security","Projects","Settings"];
+var TABS = ["Overview","Activity","Workspace","Handoff","Tasks","Issues","Memory","Code","Changes","Sessions","Search","Analytics","Security","Projects","Settings"];
 var state = { tab: "Overview", projectId: null, projects: [], query: "", file: null, previousTab: "Overview",
-  workspaces: [], workspace: null, wsQuery: "" };
+  workspaces: [], workspace: null, wsQuery: "",
+  follow: true, activitySeen: 0, activityTimer: null };
 
 function el(id) { return document.getElementById(id); }
 function esc(value) {
@@ -203,9 +208,78 @@ function openFile(path, projectId) {
   load();
 }
 function workspacePath(suffix) { return "/workspaces/" + encodeURIComponent(state.workspace) + (suffix || ""); }
+
+// A tool call and a file change read differently, so they are marked differently:
+// one is what an agent asked for, the other is what actually changed on disk.
+function feedRows(entries) {
+  if (!entries.length) {
+    return '<p class="empty">Nothing yet. Ask an agent to do something in a connected project ' +
+      'and its DevMemory calls will appear here.</p>';
+  }
+  return entries.slice().reverse().map(function (entry) {
+    var kind = entry.source === "file"
+      ? '<span class="badge warn">file</span>'
+      : entry.outcome === "error" ? '<span class="badge bad">error</span>'
+      : entry.outcome === "denied" ? '<span class="badge bad">denied</span>'
+      : '<span class="badge">' + esc(entry.tool || "tool") + "</span>";
+
+    return '<div class="feedrow"><span class="muted mono">' + esc(String(entry.at).slice(11, 19)) + "</span>" +
+      kind +
+      (entry.projectName ? '<span class="badge">' + esc(entry.projectName) + "</span>" : "") +
+      '<span class="feedtext">' + esc(entry.summary) +
+      (entry.detail ? ' <span class="muted">— ' + esc(entry.detail) + "</span>" : "") + "</span>" +
+      (entry.durationMs !== null && entry.durationMs !== undefined
+        ? '<span class="muted mono">' + entry.durationMs + "ms</span>"
+        : "") + "</div>";
+  }).join("");
+}
+
+// One timer only: a second tab switch must not leave two polls running.
+function pollActivity() {
+  if (state.activityTimer) clearTimeout(state.activityTimer);
+  state.activityTimer = setTimeout(function () {
+    if (state.tab !== "Activity" || !state.follow) return;
+    api("/activity?limit=120&since=" + state.activitySeen).then(function (data) {
+      if (data.entries.length) {
+        state.activitySeen = data.entries[data.entries.length - 1].id;
+        var feed = el("feed");
+        if (feed) feed.innerHTML = feedRows(data.entries) + feed.innerHTML;
+      }
+      pollActivity();
+    }).catch(function () { pollActivity(); });
+  }, 2000);
+}
 function projectPath(suffix) { return "/projects/" + state.projectId + (suffix || ""); }
 
 var views = {
+  // What an instruction actually did: the tools an agent called, and the files
+  // that changed as a result. Polls while it is the open tab.
+  Activity: function () {
+    return api("/activity?limit=120").then(function (data) {
+      state.activitySeen = data.entries.length ? data.entries[data.entries.length - 1].id : 0;
+
+      render('<div class="row" style="justify-content:space-between">' +
+        '<div class="row"><label><input type="checkbox" id="autofollow"' +
+        (state.follow ? " checked" : "") + '> Follow</label>' +
+        '<span class="muted" id="livenote">' + (state.follow ? "updating every 2s" : "paused") + "</span></div>" +
+        '<span class="muted">' + data.entries.length + " recent events</span></div>" +
+
+        '<div class="panel"><h2>Activity</h2><div id="feed">' + feedRows(data.entries) + "</div></div>" +
+
+        '<div class="panel"><h2>Most used tools</h2>' +
+        table(["Tool", "Calls"], data.by_tool.slice(0, 12).map(function (row) {
+          return ['<span class="mono">' + esc(row.tool) + "</span>", esc(row.count)];
+        })) + "</div>");
+
+      el("autofollow").addEventListener("change", function (event) {
+        state.follow = event.target.checked;
+        el("livenote").textContent = state.follow ? "updating every 2s" : "paused";
+        if (state.follow) pollActivity();
+      });
+      if (state.follow) pollActivity();
+    });
+  },
+
   // The whole point of this view is what no single-project view can show: the
   // calls one repository makes into another, and the ones that land nowhere.
   Workspace: function () {
@@ -740,7 +814,7 @@ var views = {
 };
 
 function needsProject(tab) {
-  return tab !== "Overview" && tab !== "Projects" && tab !== "Settings" && tab !== "Workspace";
+  return tab !== "Overview" && tab !== "Projects" && tab !== "Settings" && tab !== "Workspace" && tab !== "Activity";
 }
 
 function load() {
@@ -758,7 +832,12 @@ function drawTabs() {
     return '<button class="' + (tab === state.tab ? "active" : "") + '" data-tab="' + tab + '">' + tab + "</button>";
   }).join("");
   Array.prototype.forEach.call(el("tabs").children, function (button) {
-    button.addEventListener("click", function () { state.tab = button.dataset.tab; drawTabs(); load(); });
+    button.addEventListener("click", function () {
+      if (state.activityTimer) { clearTimeout(state.activityTimer); state.activityTimer = null; }
+      state.tab = button.dataset.tab;
+      drawTabs();
+      load();
+    });
   });
 }
 

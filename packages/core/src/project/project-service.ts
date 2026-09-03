@@ -20,6 +20,7 @@ import { ContextCache, type ContextAnalytics } from "../context/context-cache.js
 import { PermissionEngine } from "../security/permissions.js";
 import { RecoveryEngine } from "../recovery/recovery-engine.js";
 import { WorkspaceRegistry } from "../workspace/workspace-registry.js";
+import { ActivityLog } from "../activity/activity-log.js";
 import {
   budgetPerProject,
   mergeWorkspaceContext,
@@ -120,6 +121,7 @@ export class DevMemory {
   /** Operation policy for every surface that calls in (PRD 38). */
   readonly permissions: PermissionEngine;
   private workspaceRegistry: WorkspaceRegistry | undefined;
+  private activityLog: ActivityLog | undefined;
 
   constructor(options: DevMemoryOptions = {}) {
     this.home = options.home ?? resolveHome();
@@ -195,6 +197,17 @@ export class DevMemory {
 
   filesFor(projectId: string): FileStore {
     return new FileStore(this.databases.openProjectIndex(projectId));
+  }
+
+  /**
+   * What agents have been doing, across every project (PRD 41).
+   *
+   * Shared rather than per project: one instruction routinely touches a backend
+   * and the two apps that call it, and a feed split three ways reads as noise.
+   */
+  get activity(): ActivityLog {
+    if (!this.activityLog) this.activityLog = new ActivityLog(this.databases.openRegistry());
+    return this.activityLog;
   }
 
   /** HTTP routes served and called by a project. */

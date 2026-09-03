@@ -11,6 +11,14 @@ export interface ToolContext {
   cwd: string;
   /** Workspace roots advertised by the MCP client, if any (PRD 8, fallback 1). */
   clientRoots(): Promise<string[]>;
+  /**
+   * The project the call in flight resolved to, for the activity feed.
+   *
+   * Most tools take a root or fall back to the cwd rather than an explicit id, so
+   * the wrapper that logs the call cannot work out which project it touched. The
+   * resolver knows, and this is where it leaves the answer.
+   */
+  resolved?: { projectId: string; name: string } | undefined;
 }
 
 export interface ToolDefinition<Shape extends ZodRawShape = ZodRawShape> {
@@ -35,13 +43,16 @@ export async function resolveTarget(
   input: { project_id?: string; root?: string; auto_connect?: boolean },
 ) {
   const roots = await context.clientRoots();
-  return context.devmemory.requireProject({
+  const project = await context.devmemory.requireProject({
     ...(input.project_id ? { projectId: input.project_id } : {}),
     ...(input.root ? { explicitRoot: input.root } : {}),
     clientRoots: roots,
     cwd: context.cwd,
     ...(input.auto_connect === false ? { autoConnect: false } : {}),
   });
+
+  context.resolved = { projectId: project.projectId, name: project.name };
+  return project;
 }
 
 export interface ToolErrorPayload {

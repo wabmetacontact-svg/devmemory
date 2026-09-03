@@ -172,6 +172,16 @@ export class ProjectWatcher {
     const branchChanged = headTouched && branchNow !== this.branch ? branchNow : null;
     this.branch = branchNow;
 
+    // A watch event is not a change. Windows fires one for a metadata touch, and
+    // an editor writing the same bytes fires one too, so the file's stored hash is
+    // snapshotted here and compared after indexing. The indexer was already
+    // hash-gated and did the right thing; it was the reported event that lied.
+    const fileStore = this.devmemory.filesFor(this.project.projectId);
+    const before = new Map<string, string | null>();
+    for (const relative of changed) {
+      before.set(relative, fileStore.get(this.project.projectId, relative)?.hash ?? null);
+    }
+
     let stats: IndexRunStats | null = null;
     // A deletion or a branch switch needs a full scan to be seen at all; a plain
     // edit only needs the files that actually changed (PRD 56).
@@ -182,6 +192,10 @@ export class ProjectWatcher {
     } else if (changed.length > 0) {
       stats = await this.devmemory.index(this.project.projectId, { only: changed });
     }
+
+    const reallyChanged = changed.filter(
+      (relative) => (fileStore.get(this.project.projectId, relative)?.hash ?? null) !== before.get(relative),
+    );
 
     const cache = this.devmemory.contextCacheFor(this.project.projectId);
     const invalidatedContexts = branchChanged !== null ? cache.clear() : cache.invalidatePaths([...changed, ...removed]);
@@ -196,6 +210,11 @@ export class ProjectWatcher {
       at: new Date().toISOString(),
     };
 
+    // The feed's other half. Tool calls say what an agent asked for; this says
+    // what actually changed on disk, whoever changed it - an edit made with a
+    // plain file write is invisible to the MCP server but not to the watcher.
+    this.recordActivity(reallyChanged, removed, branchChanged, stats);
+
     this.options.onEvent?.(event);
     return event;
   }
@@ -207,6 +226,28 @@ export class ProjectWatcher {
     } catch {
       return null;
     }
+  }
+
+  private recordActivity(
+    changed: string[],
+    removed: string[],
+    branchChanged: string | null,
+    stats: IndexRunStats | null,
+  ): void {
+    const parts: string[] = [];
+    if (changed.length) parts.push(changed.length === 1 ? (changed[0] as string) : `${changed.length} files changed`);
+    if (removed.length) parts.push(removed.length === 1 ? `${removed[0]} removed` : `${removed.length} files removed`);
+    if (branchChanged) parts.push(`branch -> ${branchChanged}`);
+    if (parts.length === 0) return;
+
+    this.devmemory.activity.record({
+      source: "file",
+      projectId: this.project.projectId,
+      projectName: this.project.name,
+      summary: parts.join(", "),
+      ...(changed.length > 1 ? { detail: changed.slice(0, 8).join(", ") } : {}),
+      ...(stats ? { durationMs: stats.durationMs } : {}),
+    });
   }
 }
 

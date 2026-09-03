@@ -3,6 +3,7 @@ import type { Logger } from "@samirthakur024/shared";
 import type { DevMemory } from "@samirthakur024/core";
 import { ALL_TOOLS } from "./tools/index.js";
 import { toToolError, type ToolContext, type ToolDefinition } from "./tool-context.js";
+import { describeCall, describeResult } from "./activity-summary.js";
 
 export const SERVER_NAME = "devmemory";
 export const SERVER_VERSION = "0.1.0";
@@ -88,6 +89,7 @@ export function createDevMemoryServer(options: CreateServerOptions): CreatedServ
             confirmed: (args ?? {}).confirm === true,
           });
           if (!decision.allowed) {
+            record(options.devmemory, context, tool.name, args ?? {}, "denied", Date.now() - started, decision.reason);
             return {
               content: [
                 {
@@ -105,12 +107,15 @@ export function createDevMemoryServer(options: CreateServerOptions): CreatedServ
             };
           }
 
+          context.resolved = undefined;
           const payload = await tool.handler(args ?? {}, context);
           options.logger?.debug({ tool: tool.name, ms: Date.now() - started }, "tool ok");
+          record(options.devmemory, context, tool.name, args ?? {}, "ok", Date.now() - started, describeResult(tool.name, payload));
           return { content: [{ type: "text" as const, text: JSON.stringify(payload) }] };
         } catch (error) {
           const payload = toToolError(error);
           options.logger?.warn({ tool: tool.name, err: payload.error.message }, "tool failed");
+          record(options.devmemory, context, tool.name, args ?? {}, "error", Date.now() - started, payload.error.message);
           return { content: [{ type: "text" as const, text: JSON.stringify(payload) }], isError: true };
         }
       },
@@ -118,6 +123,44 @@ export function createDevMemoryServer(options: CreateServerOptions): CreatedServ
   }
 
   return { server, context };
+}
+
+/**
+ * Writes one feed row for a tool call (PRD 41).
+ *
+ * Every call already passes through this wrapper, which is the only place that
+ * sees the tool, its timing and its outcome together - so it is the only place
+ * the dashboard can learn what an instruction actually did. Nothing here is
+ * allowed to throw: a feed row is never worth failing a tool call for.
+ */
+function record(
+  devmemory: DevMemory,
+  context: ToolContext,
+  tool: string,
+  args: Record<string, unknown>,
+  outcome: "ok" | "error" | "denied",
+  durationMs: number,
+  detail: string | null,
+): void {
+  try {
+    const { summary } = describeCall(tool, args);
+    // The resolver leaves the project it settled on; an explicit id is the fallback.
+    const resolved = context.resolved;
+    const projectId = resolved?.projectId ?? (typeof args.project_id === "string" ? args.project_id : null);
+    const project = resolved ?? (projectId ? devmemory.registry.get(projectId) : null);
+
+    devmemory.activity.record({
+      source: "tool",
+      tool,
+      summary: summary || tool,
+      outcome,
+      durationMs,
+      ...(detail ? { detail } : {}),
+      ...(project ? { projectId: project.projectId, projectName: project.name } : {}),
+    });
+  } catch {
+    // Ignored on purpose - see the doc comment.
+  }
 }
 
 /** file:///C:/path and file:///home/u/path both need to become native paths. */

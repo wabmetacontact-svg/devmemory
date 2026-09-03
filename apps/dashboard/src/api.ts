@@ -29,6 +29,19 @@ export async function handleApi(devmemory: DevMemory, request: ApiRequest): Prom
     if (head === "overview" && request.method === "GET") return overview(devmemory);
     if (head === "settings" && request.method === "GET") return settings(devmemory);
 
+    if (head === "activity" && request.method === "GET") {
+      const since = Number(request.query.get("since") ?? "");
+      const projectId = request.query.get("project");
+      return ok({
+        entries: devmemory.activity.recent({
+          limit: Number(request.query.get("limit") ?? 80),
+          ...(Number.isFinite(since) && since > 0 ? { since } : {}),
+          ...(projectId ? { projectId } : {}),
+        }),
+        by_tool: devmemory.activity.summary(),
+      });
+    }
+
     if (head === "workspaces") {
       const [name, section] = rest;
       if (!name) return request.method === "GET" ? workspaces(devmemory) : notFound("unknown route");

@@ -68,4 +68,34 @@ CREATE TABLE IF NOT EXISTS workspace_projects (
 CREATE INDEX IF NOT EXISTS idx_workspace_projects ON workspace_projects(project_id);
 `,
   },
+  {
+    version: 3,
+    name: "activity",
+    sql: `
+-- What agents actually did, newest last (PRD 41 surfaces, one shared log).
+-- It lives in the registry rather than per project because a single instruction
+-- routinely crosses projects, and a feed split three ways reads as noise.
+--
+-- summary and detail are written already-redacted and already-shortened by the
+-- caller: this table must never become a second copy of source text or of a
+-- tool argument nobody screened.
+CREATE TABLE IF NOT EXISTS activity (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  at            TEXT NOT NULL,
+  source        TEXT NOT NULL,
+  agent         TEXT,
+  project_id    TEXT,
+  project_name  TEXT,
+  tool          TEXT,
+  summary       TEXT NOT NULL,
+  detail        TEXT,
+  outcome       TEXT NOT NULL DEFAULT 'ok',
+  duration_ms   INTEGER,
+  session_id    TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_recent ON activity(id DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_project ON activity(project_id, id DESC);
+`,
+  },
 ];
