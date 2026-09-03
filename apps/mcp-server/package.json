@@ -1,6 +1,6 @@
 {
   "name": "@samirthakur024/mcp-server",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "DevMemory MCP server (stdio) for Claude Code, OpenCode and any MCP-compatible agent.",
   "keywords": [
     "mcp",

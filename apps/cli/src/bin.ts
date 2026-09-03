@@ -31,7 +31,21 @@ import { startDashboard } from "@samirthakur024/dashboard";
 
 requireSupportedRuntime();
 
-const VERSION = "0.1.0";
+/**
+ * Read from the manifest rather than typed here: the constant said 0.1.0 while the
+ * published package was 0.1.1, so `devmemory --version` reported a release that
+ * did not exist. A hardcoded version only ever drifts in the direction of a lie.
+ */
+const VERSION: string = readVersion();
+
+function readVersion(): string {
+  try {
+    const manifest = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "package.json");
+    return String(JSON.parse(fs.readFileSync(manifest, "utf8")).version ?? "0.0.0");
+  } catch {
+    return "0.0.0";
+  }
+}
 
 function open(): DevMemory {
   return new DevMemory();

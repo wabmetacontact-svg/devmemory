@@ -1,6 +1,6 @@
 {
   "name": "@samirthakur024/indexer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Incremental filesystem indexer, tree-sitter code intelligence and FTS5 search for DevMemory.",
   "keywords": [
     "mcp",
